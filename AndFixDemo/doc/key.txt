@@ -1,0 +1,6 @@
+STORE_FILE=/silence.jks
+
+#STORE_FILE=/silence.jks
+STORE_PASSWORD=silence
+KEY_ALIAS=AndFixDemo
+KEY_PASSWORD=AndFixDemo
