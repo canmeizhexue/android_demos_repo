@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">SecondLibrary</string>
+    <string name="common_string">这是在第二个Library里面定义的资源啦</string>
+    <string name="second_library_string">第二个库second_library_string</string>
+</resources>

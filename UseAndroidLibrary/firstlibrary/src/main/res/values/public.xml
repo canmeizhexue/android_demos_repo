@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--默认情况下library里面的所有资源都会直接暴露给library的使用者，通过在library的res/values/下面配置public.xml文件可以只暴露指定的资源给使用者，，，，但是实际效果并不是-->
+    <public name="common_public_string" type="string"/>
+</resources>

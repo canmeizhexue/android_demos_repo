@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/UseAndroidLibrary.iml" filepath="$PROJECT_DIR$/UseAndroidLibrary.iml" />
+      <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
+      <module fileurl="file://$PROJECT_DIR$/firstlibrary/firstlibrary.iml" filepath="$PROJECT_DIR$/firstlibrary/firstlibrary.iml" />
+      <module fileurl="file://$PROJECT_DIR$/myapplicationlibrary/myapplicationlibrary.iml" filepath="$PROJECT_DIR$/myapplicationlibrary/myapplicationlibrary.iml" />
+      <module fileurl="file://$PROJECT_DIR$/myapplicationsecondlibrary-debug/myapplicationsecondlibrary-debug.iml" filepath="$PROJECT_DIR$/myapplicationsecondlibrary-debug/myapplicationsecondlibrary-debug.iml" />
+      <module fileurl="file://$PROJECT_DIR$/secondlibrary/secondlibrary.iml" filepath="$PROJECT_DIR$/secondlibrary/secondlibrary.iml" />
+    </modules>
+  </component>
+</project>

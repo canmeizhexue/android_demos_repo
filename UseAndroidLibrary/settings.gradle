@@ -1,0 +1,1 @@
+include ':app', ':firstlibrary', ':secondlibrary', ':myapplicationlibrary', ':myapplicationsecondlibrary-debug'
