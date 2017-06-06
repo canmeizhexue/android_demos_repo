@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<items version="2" >
+
+    <item
+        jar="D:\as_workspaces\android_demos_repo\samples-23\media\Camera2Video\Application\build\intermediates\exploded-aar\com.android.support\support-v13\21.0.2\jars\libs\internal_impl-21.0.2.jar"
+        jumboMode="false"
+        revision="22.0.1"
+        sha1="9346da9fb778af9e451211bbc3541daced174ba7">
+        <dex dex="D:\as_workspaces\android_demos_repo\samples-23\media\Camera2Video\Application\build\intermediates\pre-dexed\debug\internal_impl-21.0.2-65b6602c784ceb1efafba4243b1e89a79d24550d.jar" />
+    </item>
+    <item
+        jar="D:\as_workspaces\android_demos_repo\samples-23\media\Camera2Video\Application\build\intermediates\exploded-aar\com.android.support\cardview-v7\21.0.2\jars\classes.jar"
+        jumboMode="false"
+        revision="22.0.1"
+        sha1="b017100da14f9c158c9f5f2f508333c224b24a7c">
+        <dex dex="D:\as_workspaces\android_demos_repo\samples-23\media\Camera2Video\Application\build\intermediates\pre-dexed\debug\classes-1fe95f732c146f8f1431245b129d158053dbaa67.jar" />
+    </item>
+    <item
+        jar="D:\as_workspaces\android_demos_repo\samples-23\media\Camera2Video\Application\build\intermediates\exploded-aar\com.android.support\support-v4\21.0.2\jars\classes.jar"
+        jumboMode="false"
+        revision="22.0.1"
+        sha1="d1bf02de1c56d942e7a9d093b8610ba1ef4128e3">
+        <dex dex="D:\as_workspaces\android_demos_repo\samples-23\media\Camera2Video\Application\build\intermediates\pre-dexed\debug\classes-e7595ac0442236841365e751d45af7cfc7c6223b.jar" />
+    </item>
+    <item
+        jar="D:\as_workspaces\android_demos_repo\samples-23\media\Camera2Video\Application\build\intermediates\exploded-aar\com.android.support\support-v13\21.0.2\jars\classes.jar"
+        jumboMode="false"
+        revision="22.0.1"
+        sha1="61965ae058916e6a57950dd61b0164dc866af19a">
+        <dex dex="D:\as_workspaces\android_demos_repo\samples-23\media\Camera2Video\Application\build\intermediates\pre-dexed\debug\classes-1895f36f42b4fc90e318a9de0385e90273116b59.jar" />
+    </item>
+    <item
+        jar="D:\Users\zengyaping\AppData\Local\Android\sdk\extras\android\m2repository\com\android\support\support-annotations\21.0.2\support-annotations-21.0.2.jar"
+        jumboMode="false"
+        revision="22.0.1"
+        sha1="99373741f99a0556ee293c41e8faa1ca3ae8a4e6">
+        <dex dex="D:\as_workspaces\android_demos_repo\samples-23\media\Camera2Video\Application\build\intermediates\pre-dexed\debug\support-annotations-21.0.2-9e59836213d98611c2cfac08ec431bb4aab35cc7.jar" />
+    </item>
+    <item
+        jar="D:\as_workspaces\android_demos_repo\samples-23\media\Camera2Video\Application\build\intermediates\exploded-aar\com.android.support\support-v4\21.0.2\jars\libs\internal_impl-21.0.2.jar"
+        jumboMode="false"
+        revision="22.0.1"
+        sha1="962e8b12569c56dbdcf8367eb4eac8bb129cd18f">
+        <dex dex="D:\as_workspaces\android_demos_repo\samples-23\media\Camera2Video\Application\build\intermediates\pre-dexed\debug\internal_impl-21.0.2-a0dd38233bfae65c720b7db0934d99b1877a8122.jar" />
+    </item>
+
+</items>

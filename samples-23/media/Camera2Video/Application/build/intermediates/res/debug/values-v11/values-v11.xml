@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- From: file:/D:/as_workspaces/android_demos_repo/samples-23/media/Camera2Video/Application/src/main/res/values-v11/template-styles.xml -->
+    <eat-comment/>
+    <style name="Theme.Base" parent="android:Theme.Holo.Light"/>
+</resources>
