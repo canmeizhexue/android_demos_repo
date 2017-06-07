@@ -65,10 +65,10 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
-//TextureView好了之后----》打开相机，然后有打开相机的相应回调得到CameraDevice，
+//TextureView好了之后----》打开相机，然后有打开相机的相应回调得到CameraDevice，建立SurfaceSession,,,发送CaptureRequest，，，，
 public class Camera2BasicFragment extends Fragment implements View.OnClickListener {
 
-    /**
+    /**屏幕的旋转方向和JPEG的旋转方向还不一样，所以需要转换，
      * Conversion from screen rotation to JPEG orientation.
      */
     private static final SparseIntArray ORIENTATIONS = new SparseIntArray();
@@ -85,16 +85,16 @@ public class Camera2BasicFragment extends Fragment implements View.OnClickListen
      */
     private static final String TAG = "Camera2BasicFragment";
 
-    /**
+    /**展示预览，
      * Camera state: Showing camera preview.
      */
     private static final int STATE_PREVIEW = 0;
 
-    /**
+    /**等待聚焦
      * Camera state: Waiting for the focus to be locked.
      */
     private static final int STATE_WAITING_LOCK = 1;
-    /**
+    /**等待可以拍照的信号，
      * Camera state: Waiting for the exposure to be precapture state.
      */
     private static final int STATE_WAITING_PRECAPTURE = 2;
@@ -102,7 +102,7 @@ public class Camera2BasicFragment extends Fragment implements View.OnClickListen
      * Camera state: Waiting for the exposure state to be something other than precapture.
      */
     private static final int STATE_WAITING_NON_PRECAPTURE = 3;
-    /**
+    /**拍照了
      * Camera state: Picture was taken.
      */
     private static final int STATE_PICTURE_TAKEN = 4;
@@ -158,7 +158,7 @@ public class Camera2BasicFragment extends Fragment implements View.OnClickListen
      */
 
     private CameraDevice mCameraDevice;
-    /**
+    /**打开摄像头的时候建立起来的，
      * The {@link android.util.Size} of camera preview.
      */
 
@@ -228,6 +228,7 @@ public class Camera2BasicFragment extends Fragment implements View.OnClickListen
 
         @Override
         public void onImageAvailable(ImageReader reader) {
+            Log.d("silence","onImageAvailable-----------");
             mBackgroundHandler.post(new ImageSaver(reader.acquireNextImage(), mFile));
         }
 
@@ -243,7 +244,7 @@ public class Camera2BasicFragment extends Fragment implements View.OnClickListen
      */
     private CaptureRequest mPreviewRequest;
 
-    /**
+    /**这个是app里面定义的一个状态，
      * The current state of camera state for taking pictures.
      *
      * @see #mCaptureCallback
@@ -264,20 +265,26 @@ public class Camera2BasicFragment extends Fragment implements View.OnClickListen
         private void process(CaptureResult result) {
             switch (mState) {
                 case STATE_PREVIEW: {
+                    //之前还是建立通道，，，，，，，，，这个时候其实应该已经可以看到预览了，
                     // We have nothing to do when the camera preview is working normally.
+//                    Log.d("zyp","process--------------STATE_PREVIEW");
                     break;
                 }
                 case STATE_WAITING_LOCK: {
+                    Log.d("zyp","process--------------STATE_WAITING_LOCK");
                     Integer afState = result.get(CaptureResult.CONTROL_AF_STATE);
                     if (afState == null) {
+                        Log.d("zyp","process--------------afState == null");
                         captureStillPicture();
                     } else if (CaptureResult.CONTROL_AF_STATE_FOCUSED_LOCKED == afState ||
                             CaptureResult.CONTROL_AF_STATE_NOT_FOCUSED_LOCKED == afState) {
+                        Log.d("zyp","process--------------afState ==  "+afState);
                         // CONTROL_AE_STATE can be null on some devices
                         Integer aeState = result.get(CaptureResult.CONTROL_AE_STATE);
                         if (aeState == null ||
                                 aeState == CaptureResult.CONTROL_AE_STATE_CONVERGED) {
                             mState = STATE_PICTURE_TAKEN;
+                            Log.d("zyp","process--------------afState ="+aeState);
                             captureStillPicture();
                         } else {
                             runPrecaptureSequence();
@@ -286,6 +293,7 @@ public class Camera2BasicFragment extends Fragment implements View.OnClickListen
                     break;
                 }
                 case STATE_WAITING_PRECAPTURE: {
+                    Log.d("zyp","process--------------STATE_WAITING_PRECAPTURE");
                     // CONTROL_AE_STATE can be null on some devices
                     Integer aeState = result.get(CaptureResult.CONTROL_AE_STATE);
                     if (aeState == null ||
@@ -296,6 +304,7 @@ public class Camera2BasicFragment extends Fragment implements View.OnClickListen
                     break;
                 }
                 case STATE_WAITING_NON_PRECAPTURE: {
+                    Log.d("zyp","process--------------STATE_WAITING_NON_PRECAPTURE");
                     // CONTROL_AE_STATE can be null on some devices
                     Integer aeState = result.get(CaptureResult.CONTROL_AE_STATE);
                     if (aeState == null || aeState != CaptureResult.CONTROL_AE_STATE_PRECAPTURE) {
@@ -308,14 +317,15 @@ public class Camera2BasicFragment extends Fragment implements View.OnClickListen
         }
 
         @Override
-        public void onCaptureProgressed(CameraCaptureSession session, CaptureRequest request,
-                                        CaptureResult partialResult) {
+        public void onCaptureProgressed(CameraCaptureSession session, CaptureRequest request, CaptureResult partialResult) {
+            Log.d("zyp","onCaptureProgressed");
             process(partialResult);
         }
 
         @Override
         public void onCaptureCompleted(CameraCaptureSession session, CaptureRequest request,
                                        TotalCaptureResult result) {
+//            Log.d("zyp","onCaptureCompleted");
             process(result);
         }
 
@@ -355,15 +365,17 @@ public class Camera2BasicFragment extends Fragment implements View.OnClickListen
      * @param choices     The list of sizes that the camera supports for the intended output class
      * @param width       The minimum desired width
      * @param height      The minimum desired height
-     * @param aspectRatio The aspect ratio
+     * @param aspectRatio The aspect ratio 来自摄像头，，
      * @return The optimal {@code Size}, or an arbitrary one if none were big enough
      */
     private static Size chooseOptimalSize(Size[] choices, int width, int height, Size aspectRatio) {
         // Collect the supported resolutions that are at least as big as the preview Surface
+        //至少要和surface大小一样，，
         List<Size> bigEnough = new ArrayList<Size>();
         int w = aspectRatio.getWidth();
         int h = aspectRatio.getHeight();
         for (Size option : choices) {
+            //宽高比要一样，，，，
             if (option.getHeight() == option.getWidth() * h / w &&
                     option.getWidth() >= width && option.getHeight() >= height) {
                 bigEnough.add(option);
@@ -429,7 +441,7 @@ public class Camera2BasicFragment extends Fragment implements View.OnClickListen
         super.onPause();
     }
 
-    /**
+    /**建立和摄像头相关的成员变量
      * Sets up member variables related to camera.
      *
      * @param width  The width of available size for camera preview
@@ -439,6 +451,7 @@ public class Camera2BasicFragment extends Fragment implements View.OnClickListen
         Activity activity = getActivity();
         CameraManager manager = (CameraManager) activity.getSystemService(Context.CAMERA_SERVICE);
         try {
+            Log.d("zyp","manager.getCameraIdList()-------"+Arrays.asList(manager.getCameraIdList()));
             for (String cameraId : manager.getCameraIdList()) {
                 //可能有多个摄像头，前、后
                 //这个地方获取摄像头的特性，
@@ -454,11 +467,13 @@ public class Camera2BasicFragment extends Fragment implements View.OnClickListen
                 //这些都是摄像头的静态属性，
                 StreamConfigurationMap map = characteristics.get(
                         CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
+                Log.d("zyp","StreamConfigurationMap-------"+map);
 
                 // For still image captures, we use the largest available size.
                 Size largest = Collections.max(
                         Arrays.asList(map.getOutputSizes(ImageFormat.JPEG)),
                         new CompareSizesByArea());
+                Log.d("zyp","largest-------"+largest);
                 //图片阅读器
                 mImageReader = ImageReader.newInstance(largest.getWidth(), largest.getHeight(),
                         ImageFormat.JPEG, /*maxImages*/2);
@@ -469,16 +484,22 @@ public class Camera2BasicFragment extends Fragment implements View.OnClickListen
                 // bus' bandwidth limitation, resulting in gorgeous previews but the storage of
                 // garbage capture data.
                 //图片预览大小，，，
+                Log.d("zyp","map.getOutputSizes(SurfaceTexture.class)-------"+Arrays.asList(map.getOutputSizes(SurfaceTexture.class)));
                 mPreviewSize = chooseOptimalSize(map.getOutputSizes(SurfaceTexture.class),
                         width, height, largest);
-
+                Log.d("zyp","mPreviewSize-------"+mPreviewSize );
                 // We fit the aspect ratio of TextureView to the size of preview we picked.
                 int orientation = getResources().getConfiguration().orientation;
+
+                //一句之前选择出来的预览尺寸设置Surface的宽高比，不理解这个地方，好像和自己的想法刚好相反，
                 if (orientation == Configuration.ORIENTATION_LANDSCAPE) {
-                    //竖屏
+
+                    Log.d("zyp","ORIENTATION_LANDSCAPE-------" );
                     mTextureView.setAspectRatio(
                             mPreviewSize.getWidth(), mPreviewSize.getHeight());
                 } else {
+                    //竖屏
+                    Log.d("zyp","ORIENTATION_PORTRAIT-------" );
                     mTextureView.setAspectRatio(
                             mPreviewSize.getHeight(), mPreviewSize.getWidth());
                 }
@@ -495,7 +516,7 @@ public class Camera2BasicFragment extends Fragment implements View.OnClickListen
         }
     }
 
-    /**打开相机，
+    /**打开相机，绘图表面的宽和高，
      * Opens the camera specified by {@link Camera2BasicFragment#mCameraId}.
      */
     private void openCamera(int width, int height) {
@@ -507,7 +528,7 @@ public class Camera2BasicFragment extends Fragment implements View.OnClickListen
             if (!mCameraOpenCloseLock.tryAcquire(2500, TimeUnit.MILLISECONDS)) {
                 throw new RuntimeException("Time out waiting to lock camera opening.");
             }
-            //打开相机，
+            //打开相机，第三个参数决定回调在哪个线程执行
             manager.openCamera(mCameraId, mStateCallback, mBackgroundHandler);
         } catch (CameraAccessException e) {
             e.printStackTrace();
@@ -582,13 +603,14 @@ public class Camera2BasicFragment extends Fragment implements View.OnClickListen
             Surface surface = new Surface(texture);
 
             // We set up a CaptureRequest.Builder with the output Surface.
+            //构建预览的请求，，，
             mPreviewRequestBuilder
                     = mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
             //将CameraDevice和Surface进行关联，，
             mPreviewRequestBuilder.addTarget(surface);
 
             // Here, we create a CameraCaptureSession for camera preview.
-            //这个地方为什么要俩个surface
+            //这个地方为什么要俩个surface，，一个用来预览，一个用来拍照，备选的俩个目的地
             mCameraDevice.createCaptureSession(Arrays.asList(surface, mImageReader.getSurface()),
                     new CameraCaptureSession.StateCallback() {
 
@@ -602,16 +624,18 @@ public class Camera2BasicFragment extends Fragment implements View.OnClickListen
                             // When the session is ready, we start displaying the preview.
                             mCaptureSession = cameraCaptureSession;
                             try {
+                                //AF代表自动对焦 auto focus，
                                 // Auto focus should be continuous for camera preview.
                                 mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AF_MODE,
                                         CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
+                                //AE代表自动曝光，auto expose
                                 // Flash is automatically enabled when necessary.
                                 mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AE_MODE,
                                         CaptureRequest.CONTROL_AE_MODE_ON_AUTO_FLASH);
 
                                 // Finally, we start displaying the camera preview.
                                 mPreviewRequest = mPreviewRequestBuilder.build();
-                                //
+                                //设置重复预览请求，
                                 mCaptureSession.setRepeatingRequest(mPreviewRequest,
                                         mCaptureCallback, mBackgroundHandler);
                             } catch (CameraAccessException e) {
@@ -639,12 +663,14 @@ public class Camera2BasicFragment extends Fragment implements View.OnClickListen
      * @param viewHeight The height of `mTextureView`
      */
     private void configureTransform(int viewWidth, int viewHeight) {
+        Log.d("zyp","configureTransform----width-----height------"+viewWidth+"-----------"+viewHeight);
         Activity activity = getActivity();
         if (null == mTextureView || null == mPreviewSize || null == activity) {
             return;
         }
         //屏幕方向，
         int rotation = activity.getWindowManager().getDefaultDisplay().getRotation();
+        Log.d("zyp","configureTransform----rotation------"+rotation);
         Matrix matrix = new Matrix();
         //view的尺寸
         RectF viewRect = new RectF(0, 0, viewWidth, viewHeight);
@@ -678,6 +704,8 @@ public class Camera2BasicFragment extends Fragment implements View.OnClickListen
      */
     private void lockFocus() {
         try {
+            Log.d("zyp","---开始拍照--------");
+            //聚焦，，
             // This is how to tell the camera to lock focus.
             mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER,
                     CameraMetadata.CONTROL_AF_TRIGGER_START);
@@ -708,7 +736,7 @@ public class Camera2BasicFragment extends Fragment implements View.OnClickListen
         }
     }
 
-    /**
+    /**捕捉静态图片，
      * Capture a still picture. This method should be called when we get a response in
      * {@link #mCaptureCallback} from both {@link #lockFocus()}.
      */
@@ -719,10 +747,11 @@ public class Camera2BasicFragment extends Fragment implements View.OnClickListen
                 return;
             }
             // This is the CaptureRequest.Builder that we use to take a picture.
+            //使用的模板不同，不同操作的CaptureRequest使用的模板不一样，
             final CaptureRequest.Builder captureBuilder =
                     mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE);
             captureBuilder.addTarget(mImageReader.getSurface());
-
+            //AE 和 AF 模式，，，，
             // Use the same AE and AF modes as the preview.
             captureBuilder.set(CaptureRequest.CONTROL_AF_MODE,
                     CaptureRequest.CONTROL_AF_MODE_CONTINUOUS_PICTURE);
@@ -743,7 +772,7 @@ public class Camera2BasicFragment extends Fragment implements View.OnClickListen
                     unlockFocus();
                 }
             };
-
+            //停止重复请求，，
             mCaptureSession.stopRepeating();
             mCaptureSession.capture(captureBuilder.build(), CaptureCallback, null);
         } catch (CameraAccessException e) {
@@ -765,6 +794,7 @@ public class Camera2BasicFragment extends Fragment implements View.OnClickListen
                     mBackgroundHandler);
             // After this, the camera will go back to the normal state of preview.
             mState = STATE_PREVIEW;
+            //设置重复请求？所以会一直在处理这个？
             mCaptureSession.setRepeatingRequest(mPreviewRequest, mCaptureCallback,
                     mBackgroundHandler);
         } catch (CameraAccessException e) {
