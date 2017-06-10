@@ -394,7 +394,7 @@ public class Camera2RawFragment extends Fragment implements View.OnClickListener
 
     };
 
-    /**
+    /**预览级别的Session的结果，
      * A {@link CameraCaptureSession.CaptureCallback} that handles events for the preview and
      * pre-capture sequence.
      */
@@ -411,6 +411,7 @@ public class Camera2RawFragment extends Fragment implements View.OnClickListener
                     case STATE_WAITING_FOR_3A_CONVERGENCE: {
                         boolean readyToCapture = true;
                         if (!mNoAFRun) {
+                            //设备支持自动对焦的话，现在查看下是否已经对焦好了，
                             int afState = result.get(CaptureResult.CONTROL_AF_STATE);
 
                             // If auto-focus has reached locked state, we are ready to capture
@@ -423,6 +424,7 @@ public class Camera2RawFragment extends Fragment implements View.OnClickListener
                         // auto-exposure and auto-white-balance have converged as well before
                         // taking a picture.
                         if (!isLegacyLocked()) {
+                            //如果不是过时的设备，那么设备是支持自动曝光和自动白平衡的，现在检测他们的状态，
                             int aeState = result.get(CaptureResult.CONTROL_AE_STATE);
                             int awbState = result.get(CaptureResult.CONTROL_AWB_STATE);
 
@@ -434,6 +436,7 @@ public class Camera2RawFragment extends Fragment implements View.OnClickListener
                         // If we haven't finished the pre-capture sequence but have hit our maximum
                         // wait timeout, too bad! Begin capture anyway.
                         if (!readyToCapture && hitTimeoutLocked()) {
+                            //已经到达超时时间了，这个时候也要发送真正的捕捉请求了，
                             Log.w(TAG, "Timed out waiting for pre-capture sequence to complete.");
                             readyToCapture = true;
                         }
@@ -466,7 +469,7 @@ public class Camera2RawFragment extends Fragment implements View.OnClickListener
 
     };
 
-    /**
+    /**真正的捕捉到图像的回调，
      * A {@link CameraCaptureSession.CaptureCallback} that handles the still JPEG and RAW capture
      * request.
      */
@@ -492,7 +495,7 @@ public class Camera2RawFragment extends Fragment implements View.OnClickListener
                 jpegBuilder = mJpegResultQueue.get(requestId);
                 rawBuilder = mRawResultQueue.get(requestId);
             }
-
+            //设置文件名，，
             if (jpegBuilder != null) jpegBuilder.setFile(jpegFile);
             if (rawBuilder != null) rawBuilder.setFile(rawFile);
         }
@@ -525,6 +528,7 @@ public class Camera2RawFragment extends Fragment implements View.OnClickListener
                     sb.append("Saving RAW as: ");
                     sb.append(rawBuilder.getSaveLocation());
                 }
+                //这个地方也不用担心，因为只是往摄像头发送一个请求，请求还会排队的，之前的捕捉图片请求会排在这个前面，
                 finishedCaptureLocked();
             }
 
@@ -654,6 +658,7 @@ public class Camera2RawFragment extends Fragment implements View.OnClickListener
         try {
             // Find a CameraDevice that supports RAW captures, and configure state.
             for (String cameraId : manager.getCameraIdList()) {
+                //获取相机的特性描述，
                 CameraCharacteristics characteristics
                         = manager.getCameraCharacteristics(cameraId);
 
@@ -668,10 +673,11 @@ public class Camera2RawFragment extends Fragment implements View.OnClickListener
                         CameraCharacteristics.SCALER_STREAM_CONFIGURATION_MAP);
 
                 // For still image captures, we use the largest available size.
+                //jpeg输出格式的最大值，
                 Size largestJpeg = Collections.max(
                         Arrays.asList(map.getOutputSizes(ImageFormat.JPEG)),
                         new CompareSizesByArea());
-
+                //raw_sensor输出的最大值，
                 Size largestRaw = Collections.max(
                         Arrays.asList(map.getOutputSizes(ImageFormat.RAW_SENSOR)),
                         new CompareSizesByArea());
@@ -711,7 +717,7 @@ public class Camera2RawFragment extends Fragment implements View.OnClickListener
         return false;
     }
 
-    /**
+    /**打开相机，
      * Opens the camera specified by {@link #mCameraId}.
      */
     private void openCamera() {
@@ -736,6 +742,7 @@ public class Camera2RawFragment extends Fragment implements View.OnClickListener
 
             // Attempt to open the camera. mStateCallback will be called on the background handler's
             // thread when this succeeds or fails.
+            //打开指定的摄像头，
             manager.openCamera(cameraId, mStateCallback, backgroundHandler);
         } catch (CameraAccessException e) {
             e.printStackTrace();
@@ -781,7 +788,7 @@ public class Camera2RawFragment extends Fragment implements View.OnClickListener
         }
     }
 
-    /**
+    /**开启后台线程，
      * Starts a background thread and its {@link Handler}.
      */
     private void startBackgroundThread() {
@@ -808,7 +815,7 @@ public class Camera2RawFragment extends Fragment implements View.OnClickListener
         }
     }
 
-    /**
+    /**创建CameraPreviewSession,
      * Creates a new {@link CameraCaptureSession} for camera preview.
      *
      * Call this only with {@link #mCameraStateLock} held.
@@ -823,11 +830,15 @@ public class Camera2RawFragment extends Fragment implements View.OnClickListener
             Surface surface = new Surface(texture);
 
             // We set up a CaptureRequest.Builder with the output Surface.
+            //这个地方只是构建请求，不是发送请求
+            //使用的是预览模板，，，
             mPreviewRequestBuilder
                     = mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW);
+            //数据往这个surface发送，
             mPreviewRequestBuilder.addTarget(surface);
 
             // Here, we create a CameraCaptureSession for camera preview.
+            //创建可以发送三个surface的Session
             mCameraDevice.createCaptureSession(Arrays.asList(surface,
                     mJpegImageReader.get().getSurface(),
                     mRawImageReader.get().getSurface()), new CameraCaptureSession.StateCallback() {
@@ -842,6 +853,7 @@ public class Camera2RawFragment extends Fragment implements View.OnClickListener
                                 try {
                                     setup3AControlsLocked(mPreviewRequestBuilder);
                                     // Finally, we start displaying the camera preview.
+                                    //发起预览的请求，，
                                     cameraCaptureSession.setRepeatingRequest(
                                             mPreviewRequestBuilder.build(),
                                             mPreCaptureCallback, mBackgroundHandler);
@@ -866,7 +878,7 @@ public class Camera2RawFragment extends Fragment implements View.OnClickListener
         }
     }
 
-    /**
+    /**设置自动对焦，自动曝光、自动白平衡，
      * Configure the given {@link CaptureRequest.Builder} to use auto-focus, auto-exposure, and
      * auto-white-balance controls if available.
      *
@@ -965,6 +977,7 @@ public class Camera2RawFragment extends Fragment implements View.OnClickListener
                     rotatedViewWidth, rotatedViewHeight, largestJpeg);
 
             if (swappedDimensions) {
+                //再次调整view的大小，
                 mTextureView.setAspectRatio(
                         previewSize.getHeight(), previewSize.getWidth());
             } else {
@@ -1025,9 +1038,10 @@ public class Camera2RawFragment extends Fragment implements View.OnClickListener
         }
     }
 
-    /**
+    /**初始化一个静态图片捕捉，其实是先发预览请求（包括自动对焦，自动曝光，自动白平衡等准备工作），然后再发真正的捕捉请求，
      * Initiate a still image capture.
      *
+     *发送一个捕捉请求，初始化一个pre-capture 等待自动对焦结束，镜头不再移动，等待自动曝光选择一个好的曝光值，等待白平衡汇集，
      * This function sends a capture request that initiates a pre-capture sequence in our state
      * machine that waits for auto-focus to finish, ending in a "locked" state where the lens is no
      * longer moving, waits for auto-exposure to choose a good exposure value, and waits for
@@ -1036,7 +1050,7 @@ public class Camera2RawFragment extends Fragment implements View.OnClickListener
     private void takePicture() {
         synchronized(mCameraStateLock) {
             mPendingUserCaptures++;
-
+            //pre-capture
             // If we already triggered a pre-capture sequence, or are in a state where we cannot
             // do this, return immediately.
             if (mState != STATE_PREVIEW) {
@@ -1047,6 +1061,7 @@ public class Camera2RawFragment extends Fragment implements View.OnClickListener
                 // Trigger an auto-focus run if camera is capable. If the camera is already focused,
                 // this should do nothing.
                 if (!mNoAFRun) {
+                    //支持自动对焦的话，那么触发自动对焦，这是在预览里面发送的，
                     mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AF_TRIGGER,
                             CameraMetadata.CONTROL_AF_TRIGGER_START);
                 }
@@ -1055,17 +1070,19 @@ public class Camera2RawFragment extends Fragment implements View.OnClickListener
                 // run.
                 if (!isLegacyLocked()) {
                     // Tell the camera to lock focus.
+                    //自动曝光，
                     mPreviewRequestBuilder.set(CaptureRequest.CONTROL_AE_PRECAPTURE_TRIGGER,
                             CameraMetadata.CONTROL_AE_PRECAPTURE_TRIGGER_START);
                 }
-
+                //更新状态机的状态，，其实这里就是更新mState的值，，，等待自动曝光，自动对焦，自动白平衡都ok
                 // Update state machine to wait for auto-focus, auto-exposure, and
                 // auto-white-balance (aka. "3A") to converge.
                 mState = STATE_WAITING_FOR_3A_CONVERGENCE;
 
                 // Start a timer for the pre-capture sequence.
+                //其实可以把真正的捕捉操作前的操作都可以叫做pre-capture，，，
                 startTimerLocked();
-
+                //其实是通过Session不断的向摄像头发送请求，摄像头会对接收到的请求排队处理，当前这些请求可能还有不同的优先级，
                 // Replace the existing repeating request with one with updated 3A triggers.
                 mCaptureSession.capture(mPreviewRequestBuilder.build(), mPreCaptureCallback,
                         mBackgroundHandler);
@@ -1075,7 +1092,7 @@ public class Camera2RawFragment extends Fragment implements View.OnClickListener
         }
     }
 
-    /**
+    /**向摄像头发送真正的捕捉图片的请求，
      * Send a capture request to the camera device that initiates a capture targeting the JPEG and
      * RAW outputs.
      *
@@ -1087,10 +1104,11 @@ public class Camera2RawFragment extends Fragment implements View.OnClickListener
             if (null == activity || null == mCameraDevice) {
                 return;
             }
+            //静态图像模板构造请求，，
             // This is the CaptureRequest.Builder that we use to take a picture.
             final CaptureRequest.Builder captureBuilder =
                     mCameraDevice.createCaptureRequest(CameraDevice.TEMPLATE_STILL_CAPTURE);
-
+            //发往者俩个
             captureBuilder.addTarget(mJpegImageReader.get().getSurface());
             captureBuilder.addTarget(mRawImageReader.get().getSurface());
 
@@ -1192,7 +1210,7 @@ public class Camera2RawFragment extends Fragment implements View.OnClickListener
         }
     }
 
-    /**
+    /**将Image保存到指定的文件，
      * Runnable that saves an {@link Image} into the specified {@link File}, and updates
      * {@link android.provider.MediaStore} to include the resulting file.
      *
@@ -1244,9 +1262,11 @@ public class Camera2RawFragment extends Fragment implements View.OnClickListener
         @Override
         public void run() {
             boolean success = false;
+            //图片格式，
             int format = mImage.getFormat();
             switch(format) {
                 case ImageFormat.JPEG: {
+                    //图片的像素屏幕数组，，
                     ByteBuffer buffer = mImage.getPlanes()[0].getBuffer();
                     byte[] bytes = new byte[buffer.remaining()];
                     buffer.get(bytes);
@@ -1305,7 +1325,7 @@ public class Camera2RawFragment extends Fragment implements View.OnClickListener
             }
         }
 
-        /**
+        /**builder类
          * Builder class for constructing {@link ImageSaver}s.
          *
          * This class is thread safe.
@@ -1396,7 +1416,7 @@ public class Camera2RawFragment extends Fragment implements View.OnClickListener
 
     }
 
-    /**
+    /**错误对话框
      * A dialog fragment for displaying non-recoverable errors; this {@ling Activity} will be
      * finished once the dialog has been acknowledged by the user.
      */
@@ -1430,7 +1450,7 @@ public class Camera2RawFragment extends Fragment implements View.OnClickListener
         }
     }
 
-    /**
+    /**保证最后一个调用close的才真正的调用close,
      * A wrapper for an {@link AutoCloseable} object that implements reference counting to allow
      * for resource management.
      */
@@ -1579,7 +1599,7 @@ public class Camera2RawFragment extends Fragment implements View.OnClickListener
         return Math.abs(aAspect - bAspect) <= ASPECT_RATIO_TOLERANCE;
     }
 
-    /**
+    /**摄像头传感器的方法和设备本身的方向，
      * Rotation need to transform from the camera sensor orientation to the device's current
      * orientation.
      * @param c the {@link CameraCharacteristics} to query for the camera sensor orientation.
@@ -1637,7 +1657,7 @@ public class Camera2RawFragment extends Fragment implements View.OnClickListener
         }
     }
 
-    /**
+    /**检查是否只支持过时的硬件级别，
      * Check if we are using a device that only supports the LEGACY hardware level.
      *
      * Call this only with {@link #mCameraStateLock} held.
@@ -1649,7 +1669,7 @@ public class Camera2RawFragment extends Fragment implements View.OnClickListener
                 CameraCharacteristics.INFO_SUPPORTED_HARDWARE_LEVEL_LEGACY;
     }
 
-    /**
+    /**记下触发时间
      * Start the timer for the pre-capture sequence.
      *
      * Call this only with {@link #mCameraStateLock} held.
