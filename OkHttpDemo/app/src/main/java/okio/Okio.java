@@ -107,7 +107,7 @@ public final class Okio {
     };
   }
 
-  /**
+  /**往socket写数据的sink,当写数据超时的时候，套接字会被另外一个看门狗线程异步关闭
    * Returns a sink that writes to {@code socket}. Prefer this over {@link
    * #sink(OutputStream)} because this method honors timeouts. When the socket
    * write times out, the socket is asynchronously closed by a watchdog thread.
@@ -212,7 +212,7 @@ public final class Okio {
     };
   }
 
-  /**
+  /**返回一个从socket读数据的Source，当读取数据超时的时候，套接字会被一个看门狗线程异步关闭，
    * Returns a source that reads from {@code socket}. Prefer this over {@link
    * #source(InputStream)} because this method honors timeouts. When the socket
    * read times out, the socket is asynchronously closed by a watchdog thread.

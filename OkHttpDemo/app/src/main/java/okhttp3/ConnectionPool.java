@@ -36,7 +36,8 @@ import okhttp3.internal.platform.Platform;
 
 import static okhttp3.internal.Util.closeQuietly;
 
-/**
+/**管理http和http2的链接，以此减少网络延迟
+ * 共享一个Address的http请求可能共享同一个链接
  * Manages reuse of HTTP and HTTP/2 connections for reduced network latency. HTTP requests that
  * share the same {@link Address} may share a {@link Connection}. This class implements the policy
  * of which connections to keep open for future use.
@@ -77,7 +78,7 @@ public final class ConnectionPool {
   final RouteDatabase routeDatabase = new RouteDatabase();
   boolean cleanupRunning;
 
-  /**
+  /**默认最多5个空闲链接，最多可以空闲5分钟
    * Create a new connection pool with tuning parameters appropriate for a single-user application.
    * The tuning parameters in this pool are subject to change in future OkHttp releases. Currently
    * this pool holds up to 5 idle connections which will be evicted after 5 minutes of inactivity.
@@ -115,13 +116,14 @@ public final class ConnectionPool {
     return connections.size();
   }
 
-  /**
+  /**这个地方就是想找一个可以重用的链接啦，
    * Returns a recycled connection to {@code address}, or null if no such connection exists. The
    * route is null if the address has not yet been routed.
    */
   @Nullable RealConnection get(Address address, StreamAllocation streamAllocation, Route route) {
     assert (Thread.holdsLock(this));
     for (RealConnection connection : connections) {
+      //TODO 后续再看，
       if (connection.isEligible(address, route)) {
         streamAllocation.acquire(connection);
         return connection;

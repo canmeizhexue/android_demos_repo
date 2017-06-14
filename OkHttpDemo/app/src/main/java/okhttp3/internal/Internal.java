@@ -34,7 +34,7 @@ import okhttp3.internal.connection.RealConnection;
 import okhttp3.internal.connection.RouteDatabase;
 import okhttp3.internal.connection.StreamAllocation;
 
-/**
+/**在OkHttpClient里面有一个子类，
  * Escalate internal APIs in {@code okhttp3} so they can be used from OkHttp's implementation
  * packages. The only implementation of this interface is in {@link OkHttpClient}.
  */

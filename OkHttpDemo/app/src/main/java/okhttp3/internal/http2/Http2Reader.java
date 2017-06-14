@@ -49,7 +49,7 @@ import static okhttp3.internal.http2.Http2.frameLog;
 import static okhttp3.internal.http2.Http2.ioException;
 import static okio.ByteString.EMPTY;
 
-/**
+/**读取http2的传输帧，
  * Reads HTTP/2 transport frames.
  *
  * <p>This implementation assumes we do not send an increased {@link Settings#getMaxFrameSize frame
@@ -89,14 +89,14 @@ final class Http2Reader implements Closeable {
       }
     }
   }
-
+  //除非异常，否则一直返回true,读取到的数据通过第二个参数Handler发出去，
   public boolean nextFrame(boolean requireSettings, Handler handler) throws IOException {
     try {
       source.require(9); // Frame header size
     } catch (IOException e) {
       return false; // This might be a normal socket close.
     }
-
+    //解析读取到的协议数据，，底层还是用的TCP的套接字，，，
     //  0                   1                   2                   3
     //  0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
     // +-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+
@@ -117,6 +117,7 @@ final class Http2Reader implements Closeable {
       throw ioException("Expected a SETTINGS frame but was %s", type);
     }
     byte flags = (byte) (source.readByte() & 0xff);
+    //流id,
     int streamId = (source.readInt() & 0x7fffffff); // Ignore reserved bit.
     if (logger.isLoggable(FINE)) logger.fine(frameLog(true, streamId, length, type, flags));
 

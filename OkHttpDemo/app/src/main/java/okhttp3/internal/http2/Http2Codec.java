@@ -101,8 +101,9 @@ public final class Http2Codec implements HttpCodec {
   @Override public void writeRequestHeaders(Request request) throws IOException {
     if (stream != null) return;
 
-    boolean hasRequestBody = request.body() != null;
+    boolean hasRequestBody = request.body() != null;//是否有请求体，
     List<Header> requestHeaders = http2HeadersList(request);
+
     stream = connection.newStream(requestHeaders, hasRequestBody);
     stream.readTimeout().timeout(client.readTimeoutMillis(), TimeUnit.MILLISECONDS);
     stream.writeTimeout().timeout(client.writeTimeoutMillis(), TimeUnit.MILLISECONDS);
@@ -118,26 +119,28 @@ public final class Http2Codec implements HttpCodec {
 
   @Override public Response.Builder readResponseHeaders(boolean expectContinue) throws IOException {
     List<Header> headers = stream.takeResponseHeaders();
+    //读取响应头
     Response.Builder responseBuilder = readHttp2HeadersList(headers);
     if (expectContinue && Internal.instance.code(responseBuilder) == HTTP_CONTINUE) {
       return null;
     }
     return responseBuilder;
   }
-
+  //http2的请求头，，，
   public static List<Header> http2HeadersList(Request request) {
     Headers headers = request.headers();
     List<Header> result = new ArrayList<>(headers.size() + 4);
-    result.add(new Header(TARGET_METHOD, request.method()));
-    result.add(new Header(TARGET_PATH, RequestLine.requestPath(request.url())));
-    String host = request.header("Host");
+    result.add(new Header(TARGET_METHOD, request.method()));//请求方法
+    result.add(new Header(TARGET_PATH, RequestLine.requestPath(request.url())));//请求路径，
+    String host = request.header("Host");//主机
     if (host != null) {
-      result.add(new Header(TARGET_AUTHORITY, host)); // Optional.
+      result.add(new Header(TARGET_AUTHORITY, host)); // Optional.权限
     }
-    result.add(new Header(TARGET_SCHEME, request.url().scheme()));
+    result.add(new Header(TARGET_SCHEME, request.url().scheme()));//协议
 
     for (int i = 0, size = headers.size(); i < size; i++) {
       // header names must be lowercase.
+      //名字必须小写
       ByteString name = ByteString.encodeUtf8(headers.name(i).toLowerCase(Locale.US));
       if (!HTTP_2_SKIPPED_REQUEST_HEADERS.contains(name)) {
         result.add(new Header(name, headers.value(i)));
@@ -146,7 +149,7 @@ public final class Http2Codec implements HttpCodec {
     return result;
   }
 
-  /** Returns headers for a name value block containing an HTTP/2 response. */
+  /** 读取响应头 Returns headers for a name value block containing an HTTP/2 response. */
   public static Response.Builder readHttp2HeadersList(List<Header> headerBlock) throws IOException {
     StatusLine statusLine = null;
     Headers.Builder headersBuilder = new Headers.Builder();
@@ -166,6 +169,7 @@ public final class Http2Codec implements HttpCodec {
       ByteString name = header.name;
       String value = header.value.utf8();
       if (name.equals(RESPONSE_STATUS)) {
+        //这个地方为什么是1.1
         statusLine = StatusLine.parse("HTTP/1.1 " + value);
       } else if (!HTTP_2_SKIPPED_RESPONSE_HEADERS.contains(name)) {
         Internal.instance.addLenient(headersBuilder, name.utf8(), value);

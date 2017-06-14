@@ -42,7 +42,7 @@ import static okhttp3.internal.http2.Http2.TYPE_WINDOW_UPDATE;
 import static okhttp3.internal.http2.Http2.frameLog;
 import static okhttp3.internal.http2.Http2.illegalArgument;
 
-/** Writes HTTP/2 transport frames. */
+/** 写http2传输帧 Writes HTTP/2 transport frames. */
 final class Http2Writer implements Closeable {
   private static final Logger logger = Logger.getLogger(Http2.class.getName());
 

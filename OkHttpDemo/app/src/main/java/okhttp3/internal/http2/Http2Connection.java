@@ -43,7 +43,7 @@ import okio.Okio;
 import static okhttp3.internal.http2.Settings.DEFAULT_INITIAL_WINDOW_SIZE;
 import static okhttp3.internal.platform.Platform.INFO;
 
-/**
+/**一个和远端的Socket链接，维护了收发数据的流
  * A socket connection to a remote peer. A connection hosts streams which can send and receive
  * data.
  *
@@ -106,7 +106,7 @@ public final class Http2Connection implements Closeable {
   // Visible for testing
   long bytesLeftInWriteWindow;
 
-  /** Settings we communicate to the peer. */
+  /** 设置信息，Settings we communicate to the peer. */
   Settings okHttpSettings = new Settings();
 
   private static final int OKHTTP_CLIENT_WINDOW_SIZE = 16 * 1024 * 1024;
@@ -152,8 +152,9 @@ public final class Http2Connection implements Closeable {
     peerSettings.set(Settings.MAX_FRAME_SIZE, Http2.INITIAL_MAX_FRAME_SIZE);
     bytesLeftInWriteWindow = peerSettings.getInitialWindowSize();
     socket = builder.socket;
+    //对应输出流，
     writer = new Http2Writer(builder.sink, client);
-
+    //对应输入流
     readerRunnable = new ReaderRunnable(new Http2Reader(builder.source, client));
   }
 
@@ -168,7 +169,7 @@ public final class Http2Connection implements Closeable {
   public synchronized int openStreamCount() {
     return streams.size();
   }
-
+  //获取http2Stream,,不同流id有不同的流
   synchronized Http2Stream getStream(int id) {
     return streams.get(id);
   }
@@ -459,7 +460,7 @@ public final class Http2Connection implements Closeable {
     if (thrown != null) throw thrown;
   }
 
-  /**
+  /**发送任意初始帧，开始从远端读取帧
    * Sends any initial frames and starts reading frames from the remote peer. This should be called
    * after {@link Builder#build} for all new connections.
    */
@@ -473,6 +474,7 @@ public final class Http2Connection implements Closeable {
    */
   void start(boolean sendConnectionPreface) throws IOException {
     if (sendConnectionPreface) {
+      //发送链接前缀帧，
       writer.connectionPreface();
       writer.settings(okHttpSettings);
       int windowSize = okHttpSettings.getInitialWindowSize();
@@ -480,6 +482,7 @@ public final class Http2Connection implements Closeable {
         writer.windowUpdate(0, windowSize - Settings.DEFAULT_INITIAL_WINDOW_SIZE);
       }
     }
+    //开启一个线程一直读取数据，
     new Thread(readerRunnable).start(); // Not a daemon thread.
   }
 
@@ -499,7 +502,7 @@ public final class Http2Connection implements Closeable {
   public synchronized boolean isShutdown() {
     return shutdown;
   }
-
+  //构建类，
   public static class Builder {
     Socket socket;
     String hostname;
@@ -509,7 +512,7 @@ public final class Http2Connection implements Closeable {
     PushObserver pushObserver = PushObserver.CANCEL;
     boolean client;
 
-    /**
+    /**当前这端标识客户端，是触发链接，传入true
      * @param client true if this peer initiated the connection; false if this peer accepted the
      * connection.
      */
@@ -562,7 +565,9 @@ public final class Http2Connection implements Closeable {
       ErrorCode connectionErrorCode = ErrorCode.INTERNAL_ERROR;
       ErrorCode streamErrorCode = ErrorCode.INTERNAL_ERROR;
       try {
+        //读取链接前缀帧
         reader.readConnectionPreface(this);
+        //死循环读取数据，
         while (reader.nextFrame(false, this)) {
         }
         connectionErrorCode = ErrorCode.NO_ERROR;
@@ -582,6 +587,7 @@ public final class Http2Connection implements Closeable {
     @Override public void data(boolean inFinished, int streamId, BufferedSource source, int length)
         throws IOException {
       if (pushedStream(streamId)) {
+        //推流，
         pushDataLater(streamId, source, length, inFinished);
         return;
       }
@@ -768,7 +774,7 @@ public final class Http2Connection implements Closeable {
     }
   }
 
-  /** Even, positive numbered streams are pushed streams in HTTP/2. */
+  /** 判断是否是推流，偶数，Even, positive numbered streams are pushed streams in HTTP/2. */
   boolean pushedStream(int streamId) {
     return streamId != 0 && (streamId & 1) == 0;
   }

@@ -189,6 +189,7 @@ public final class RetryAndFollowUpInterceptor implements Interceptor {
     HostnameVerifier hostnameVerifier = null;
     CertificatePinner certificatePinner = null;
     if (url.isHttps()) {
+      //是https
       sslSocketFactory = client.sslSocketFactory();
       hostnameVerifier = client.hostnameVerifier();
       certificatePinner = client.certificatePinner();

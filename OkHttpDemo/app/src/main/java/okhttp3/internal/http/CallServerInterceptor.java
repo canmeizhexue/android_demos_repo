@@ -38,12 +38,14 @@ public final class CallServerInterceptor implements Interceptor {
 
   @Override public Response intercept(Chain chain) throws IOException {
     RealInterceptorChain realChain = (RealInterceptorChain) chain;
+    //
     HttpCodec httpCodec = realChain.httpStream();
     StreamAllocation streamAllocation = realChain.streamAllocation();
     RealConnection connection = (RealConnection) realChain.connection();
     Request request = realChain.request();
 
     long sentRequestMillis = System.currentTimeMillis();
+    //写入请求头，
     httpCodec.writeRequestHeaders(request);
 
     Response.Builder responseBuilder = null;
@@ -53,6 +55,7 @@ public final class CallServerInterceptor implements Interceptor {
       // Continue" response before transmitting the request body. If we don't get that, return what
       // we did get (such as a 4xx response) without ever transmitting the request body.
       if ("100-continue".equalsIgnoreCase(request.header("Expect"))) {
+        //一般不考虑这个，
         httpCodec.flushRequest();
         responseBuilder = httpCodec.readResponseHeaders(true);
       }
@@ -61,6 +64,7 @@ public final class CallServerInterceptor implements Interceptor {
         // Write the request body if the "Expect: 100-continue" expectation was met.
         Sink requestBodyOut = httpCodec.createRequestBody(request, request.body().contentLength());
         BufferedSink bufferedRequestBody = Okio.buffer(requestBodyOut);
+        //写入请求体，，
         request.body().writeTo(bufferedRequestBody);
         bufferedRequestBody.close();
       } else if (!connection.isMultiplexed()) {
@@ -102,6 +106,7 @@ public final class CallServerInterceptor implements Interceptor {
     }
 
     if ((code == 204 || code == 205) && response.body().contentLength() > 0) {
+      //响应码 204 205是不应该有响应体的，
       throw new ProtocolException(
           "HTTP " + code + " had non-zero Content-Length: " + response.body().contentLength());
     }

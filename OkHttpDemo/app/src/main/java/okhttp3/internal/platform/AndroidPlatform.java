@@ -60,6 +60,7 @@ class AndroidPlatform extends Platform {
   @Override public void connectSocket(Socket socket, InetSocketAddress address,
       int connectTimeout) throws IOException {
     try {
+      //建立socket
       socket.connect(address, connectTimeout);
     } catch (AssertionError e) {
       if (Util.isAndroidGetsocknameError(e)) throw new IOException(e);

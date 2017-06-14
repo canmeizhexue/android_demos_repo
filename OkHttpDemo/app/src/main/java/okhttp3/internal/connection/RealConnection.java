@@ -82,7 +82,7 @@ public final class RealConnection extends Http2Connection.Listener implements Co
    * The application layer socket. Either an {@link SSLSocket} layered over {@link #rawSocket}, or
    * {@link #rawSocket} itself if this connection does not use SSL.
    */
-  private Socket socket;
+  private Socket socket;//可能是SSLSocket,
   private Handshake handshake;
   private Protocol protocol;
   private Http2Connection http2Connection;
@@ -120,13 +120,15 @@ public final class RealConnection extends Http2Connection.Listener implements Co
     result.idleAtNanos = idleAtNanos;
     return result;
   }
-
+  //链接函数什么时候调用的，
   public void connect(
       int connectTimeout, int readTimeout, int writeTimeout, boolean connectionRetryEnabled) {
     if (protocol != null) throw new IllegalStateException("already connected");
 
     RouteException routeException = null;
+    //链接配置信息，
     List<ConnectionSpec> connectionSpecs = route.address().connectionSpecs();
+    //链接配置选择器
     ConnectionSpecSelector connectionSpecSelector = new ConnectionSpecSelector(connectionSpecs);
 
     if (route.address().sslSocketFactory() == null) {
@@ -136,6 +138,7 @@ public final class RealConnection extends Http2Connection.Listener implements Co
       }
       String host = route.address().url().host();
       if (!Platform.get().isCleartextTrafficPermitted(host)) {
+        //是否允许明文，
         throw new RouteException(new UnknownServiceException(
             "CLEARTEXT communication to " + host + " not permitted by network security policy"));
       }
@@ -146,6 +149,7 @@ public final class RealConnection extends Http2Connection.Listener implements Co
         if (route.requiresTunnel()) {
           connectTunnel(connectTimeout, readTimeout, writeTimeout);
         } else {
+          //只考虑直连，
           connectSocket(connectTimeout, readTimeout);
         }
         establishProtocol(connectionSpecSelector);
@@ -209,11 +213,11 @@ public final class RealConnection extends Http2Connection.Listener implements Co
     }
   }
 
-  /** Does all the work necessary to build a full HTTP or HTTPS connection on a raw socket. */
+  /** 基于原始的套接字，构建http或https链接 Does all the work necessary to build a full HTTP or HTTPS connection on a raw socket. */
   private void connectSocket(int connectTimeout, int readTimeout) throws IOException {
     Proxy proxy = route.proxy();
     Address address = route.address();
-
+    //默认是直连的，
     rawSocket = proxy.type() == Proxy.Type.DIRECT || proxy.type() == Proxy.Type.HTTP
         ? address.socketFactory().createSocket()
         : new Socket(proxy);
@@ -232,7 +236,9 @@ public final class RealConnection extends Http2Connection.Listener implements Co
     // https://github.com/square/okhttp/issues/3245
     // https://android-review.googlesource.com/#/c/271775/
     try {
+      //source 代表这个套接字的输入流
       source = Okio.buffer(Okio.source(rawSocket));
+      //sink代表这个套接字的输出流，
       sink = Okio.buffer(Okio.sink(rawSocket));
     } catch (NullPointerException npe) {
       if (NPE_THROW_WITH_NULL.equals(npe.getMessage())) {
@@ -243,6 +249,7 @@ public final class RealConnection extends Http2Connection.Listener implements Co
 
   private void establishProtocol(ConnectionSpecSelector connectionSpecSelector) throws IOException {
     if (route.address().sslSocketFactory() == null) {
+      //如果没有sslSocketFactory，那么就是http1.1
       protocol = Protocol.HTTP_1_1;
       socket = rawSocket;
       return;
@@ -252,6 +259,7 @@ public final class RealConnection extends Http2Connection.Listener implements Co
 
     if (protocol == Protocol.HTTP_2) {
       socket.setSoTimeout(0); // HTTP/2 connection timeouts are set per-stream.
+      //这个地方才是创建了http2Connection
       http2Connection = new Http2Connection.Builder(true)
           .socket(socket, route.address().url().host(), source, sink)
           .listener(this)
@@ -266,10 +274,11 @@ public final class RealConnection extends Http2Connection.Listener implements Co
     boolean success = false;
     SSLSocket sslSocket = null;
     try {
+     //基于现有的套接字 创建一个包装的套接字
       // Create the wrapper over the connected socket.
       sslSocket = (SSLSocket) sslSocketFactory.createSocket(
           rawSocket, address.url().host(), address.url().port(), true /* autoClose */);
-
+      //配置套接字的加密套件，TLS版本信息，
       // Configure the socket's ciphers, TLS versions, and extensions.
       ConnectionSpec connectionSpec = connectionSpecSelector.configureSecureSocket(sslSocket);
       if (connectionSpec.supportsTlsExtensions()) {
@@ -278,9 +287,12 @@ public final class RealConnection extends Http2Connection.Listener implements Co
       }
 
       // Force handshake. This can throw!
+      //开始握手，，，
       sslSocket.startHandshake();
       Handshake unverifiedHandshake = Handshake.get(sslSocket.getSession());
 
+
+      //验证目标主机的套接字证书是否可以接受，
       // Verify that the socket's certificates are acceptable for the target host.
       if (!address.hostnameVerifier().verify(address.url().host(), sslSocket.getSession())) {
         X509Certificate cert = (X509Certificate) unverifiedHandshake.peerCertificates().get(0);
@@ -299,9 +311,12 @@ public final class RealConnection extends Http2Connection.Listener implements Co
           ? Platform.get().getSelectedProtocol(sslSocket)
           : null;
       socket = sslSocket;
+      //source对应的是套接字的输入流
       source = Okio.buffer(Okio.source(socket));
+      //sink对应的是套接字的输出流
       sink = Okio.buffer(Okio.sink(socket));
       handshake = unverifiedHandshake;
+      //协议信息，
       protocol = maybeProtocol != null
           ? Protocol.get(maybeProtocol)
           : Protocol.HTTP_1_1;
@@ -311,6 +326,7 @@ public final class RealConnection extends Http2Connection.Listener implements Co
       throw e;
     } finally {
       if (sslSocket != null) {
+        //握手后，
         Platform.get().afterHandshake(sslSocket);
       }
       if (!success) {
@@ -450,6 +466,7 @@ public final class RealConnection extends Http2Connection.Listener implements Co
   public HttpCodec newCodec(
       OkHttpClient client, StreamAllocation streamAllocation) throws SocketException {
     if (http2Connection != null) {
+      //确定使用的是哪个版本的codec
       return new Http2Codec(client, streamAllocation, http2Connection);
     } else {
       socket.setSoTimeout(client.readTimeoutMillis());
@@ -480,7 +497,7 @@ public final class RealConnection extends Http2Connection.Listener implements Co
     return socket;
   }
 
-  /** Returns true if this connection is ready to host new streams. */
+  /** 如果这个链接准备好了接收新流 ，返回true  Returns true if this connection is ready to host new streams. */
   public boolean isHealthy(boolean doExtensiveChecks) {
     if (socket.isClosed() || socket.isInputShutdown() || socket.isOutputShutdown()) {
       return false;

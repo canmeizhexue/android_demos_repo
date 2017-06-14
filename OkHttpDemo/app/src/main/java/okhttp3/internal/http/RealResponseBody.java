@@ -21,8 +21,8 @@ import okhttp3.ResponseBody;
 import okio.BufferedSource;
 
 public final class RealResponseBody extends ResponseBody {
-  private final Headers headers;
-  private final BufferedSource source;
+  private final Headers headers;//响应头
+  private final BufferedSource source;//响应体
 
   public RealResponseBody(Headers headers, BufferedSource source) {
     this.headers = headers;

@@ -31,7 +31,7 @@ import okhttp3.HttpUrl;
 import okhttp3.Route;
 import okhttp3.internal.Util;
 
-/**
+/**路由选择器，
  * Selects routes to connect to an origin server. Each connection requires a choice of proxy server,
  * IP address, and TLS mode. Connections may also be recycled.
  */
@@ -107,7 +107,7 @@ public final class RouteSelector {
     routeDatabase.failed(failedRoute);
   }
 
-  /** Prepares the proxy servers to try. */
+  /** 准备代理服务器 Prepares the proxy servers to try. */
   private void resetNextProxy(HttpUrl url, Proxy proxy) {
     if (proxy != null) {
       // If the user specifies a proxy, try that and only that.

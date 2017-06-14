@@ -35,11 +35,15 @@ public final class ConnectInterceptor implements Interceptor {
   @Override public Response intercept(Chain chain) throws IOException {
     RealInterceptorChain realChain = (RealInterceptorChain) chain;
     Request request = realChain.request();
+    //在RetryAndFollowUpInterceptor的时候构造的StreamAllocation
     StreamAllocation streamAllocation = realChain.streamAllocation();
 
     // We need the network to satisfy this request. Possibly for validating a conditional GET.
     boolean doExtensiveHealthChecks = !request.method().equals("GET");//不是get方法的话，就是true,要检查
+
+    //调用newStream函数，
     HttpCodec httpCodec = streamAllocation.newStream(client, doExtensiveHealthChecks);
+
     RealConnection connection = streamAllocation.connection();
 
     return realChain.proceed(request, streamAllocation, httpCodec, connection);

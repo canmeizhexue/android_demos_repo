@@ -31,7 +31,7 @@ import javax.annotation.Nullable;
 import okhttp3.internal.Util;
 import okhttp3.internal.http.HttpDate;
 
-/**
+/**http消息的头字段
  * The header fields of a single HTTP message. Values are uninterpreted strings; use {@code Request}
  * and {@code Response} for interpreted headers. This class maintains the order of the header fields
  * within the HTTP message.

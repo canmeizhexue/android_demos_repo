@@ -26,7 +26,7 @@ import okhttp3.internal.Util;
 
 import static okhttp3.internal.Util.equal;
 
-/**
+/**描述的是目标服务器的地址，
  * A specification for a connection to an origin server. For simple connections, this is the
  * server's hostname and port. If an explicit proxy is requested (or {@linkplain Proxy#NO_PROXY no
  * proxy} is explicitly requested), this also includes that proxy information. For secure

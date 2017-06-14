@@ -28,7 +28,7 @@ import okio.Sink;
 import okio.Source;
 import okio.Timeout;
 
-/** A logical bidirectional stream. */
+/** 逻辑双向流，A logical bidirectional stream. */
 public final class Http2Stream {
   // Internal state is guarded by this. No long-running or potentially
   // blocking operations are performed while the lock is held.

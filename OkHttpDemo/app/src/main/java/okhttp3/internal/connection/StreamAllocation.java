@@ -32,26 +32,34 @@ import okhttp3.internal.http2.StreamResetException;
 
 import static okhttp3.internal.Util.closeQuietly;
 
-/**
+/**这个类协调三个实体之间的关系
  * This class coordinates the relationship between three entities:
  *
+ *
  * <ul>
+ *     链接  与远端服务器之间的物理套接字链接 可能会建立很慢，所以要支持取消
  *     <li><strong>Connections:</strong> physical socket connections to remote servers. These are
  *         potentially slow to establish so it is necessary to be able to cancel a connection
  *         currently being connected.
+ *         流   基于链接之上的逻辑http请求响应对  ， 每个链接有分配限制，定义了链接可以支持的并发流数量，
+ *         http1的链接一次只能携带一对流，但是http2的链接一次可以携带多对流
  *     <li><strong>Streams:</strong> logical HTTP request/response pairs that are layered on
  *         connections. Each connection has its own allocation limit, which defines how many
  *         concurrent streams that connection can carry. HTTP/1.x connections can carry 1 stream
  *         at a time, HTTP/2 typically carry multiple.
+ *
+ *         调用，流的逻辑序列，通常是初始请求和后续请求，我们更希望一个请求的所有流都是在同一个链接上进行的，
  *     <li><strong>Calls:</strong> a logical sequence of streams, typically an initial request and
  *         its follow up requests. We prefer to keep all streams of a single call on the same
  *         connection for better behavior and locality.
  * </ul>
  *
+ * 这个类的实例代表调用Call,可以使用基于多个链接的多个流，
  * <p>Instances of this class act on behalf of the call, using one or more streams over one or more
  * connections. This class has APIs to release each of the above resources:
  *
  * <ul>
+ *     noNewStreams阻止后续因为新流而使用这个链接，，
  *     <li>{@link #noNewStreams()} prevents the connection from being used for new streams in the
  *         future. Use this after a {@code Connection: close} header, or when the connection may be
  *         inconsistent.
@@ -64,6 +72,8 @@ import static okhttp3.internal.Util.closeQuietly;
  *         call is complete but its response body has yet to be fully consumed.
  * </ul>
  *
+ * 这个类支持异步取消，如果一个http2的流是活动状态，取消操作只会针对这个当前的流，而不会影响到同一个链接上的其他流
+ * 但是如果还在TLS握手阶段，那么会影响到整个链接
  * <p>This class supports {@linkplain #cancel asynchronous canceling}. This is intended to have the
  * smallest blast radius possible. If an HTTP/2 stream is active, canceling will cancel that stream
  * but not the other streams sharing its connection. But if the TLS handshake is still in progress
@@ -86,6 +96,7 @@ public final class StreamAllocation {
   public StreamAllocation(ConnectionPool connectionPool, Address address, Object callStackTrace) {
     this.connectionPool = connectionPool;
     this.address = address;
+    //构建了一个路由选择器，
     this.routeSelector = new RouteSelector(address, routeDatabase());
     this.callStackTrace = callStackTrace;
   }
@@ -98,8 +109,10 @@ public final class StreamAllocation {
     boolean connectionRetryEnabled = client.retryOnConnectionFailure();
 
     try {
+      //找到一个链接，
       RealConnection resultConnection = findHealthyConnection(connectTimeout, readTimeout,
           writeTimeout, connectionRetryEnabled, doExtensiveHealthChecks);
+      //
       HttpCodec resultCodec = resultConnection.newCodec(client, this);
 
       synchronized (connectionPool) {
@@ -119,9 +132,10 @@ public final class StreamAllocation {
       int writeTimeout, boolean connectionRetryEnabled, boolean doExtensiveHealthChecks)
       throws IOException {
     while (true) {
+
       RealConnection candidate = findConnection(connectTimeout, readTimeout, writeTimeout,
           connectionRetryEnabled);
-
+      //如果这是一个全新的链接，我们可以跳过后续的健康检查
       // If this is a brand new connection, we can skip the extensive health checks.
       synchronized (connectionPool) {
         if (candidate.successCount == 0) {
@@ -140,7 +154,7 @@ public final class StreamAllocation {
     }
   }
 
-  /**
+  /**找到一个链接，
    * Returns a connection to host a new stream. This prefers the existing connection if it exists,
    * then the pool, finally building a new connection.
    */
@@ -159,6 +173,7 @@ public final class StreamAllocation {
       }
 
       // Attempt to get a connection from the pool.
+      //最后一个参数是null,这是去找一个可以重用的链接，，第一次应该是找不到的
       Internal.instance.get(connectionPool, address, this, null);
       if (connection != null) {
         return connection;
@@ -175,7 +190,7 @@ public final class StreamAllocation {
     RealConnection result;
     synchronized (connectionPool) {
       if (canceled) throw new IOException("Canceled");
-
+      //现在我们有了ip地址，
       // Now that we have an IP address, make another attempt at getting a connection from the pool.
       // This could match due to connection coalescing.
       Internal.instance.get(connectionPool, address, this, selectedRoute);
@@ -183,17 +198,23 @@ public final class StreamAllocation {
         route = selectedRoute;
         return connection;
       }
-
+      //第一次就是走的这里，上面的重用机制在第一次是用不到的，
       // Create a connection and assign it to this allocation immediately. This makes it possible
       // for an asynchronous cancel() to interrupt the handshake we're about to do.
       route = selectedRoute;
       refusedStreamCount = 0;
+
+
+      //构建一个RealConnection，，这个时候这个selectedRoute肯定不为null了，，
       result = new RealConnection(connectionPool, selectedRoute);
+
       acquire(result);
     }
 
     // Do TCP + TLS handshakes. This is a blocking operation.
+    //进行链接，
     result.connect(connectTimeout, readTimeout, writeTimeout, connectionRetryEnabled);
+
     routeDatabase().connected(result.route());
 
     Socket socket = null;
@@ -249,7 +270,7 @@ public final class StreamAllocation {
     closeQuietly(socket);
   }
 
-  /** Forbid new streams from being created on the connection that hosts this allocation. */
+  /** 禁止在这个链接上创建新流  Forbid new streams from being created on the connection that hosts this allocation. */
   public void noNewStreams() {
     Socket socket;
     synchronized (connectionPool) {
@@ -342,7 +363,7 @@ public final class StreamAllocation {
     closeQuietly(socket);
   }
 
-  /**
+  /**要和release配对使用，
    * Use this allocation to hold {@code connection}. Each call to this must be paired with a call to
    * {@link #release} on the same connection.
    */
@@ -397,7 +418,7 @@ public final class StreamAllocation {
     RealConnection connection = connection();
     return connection != null ? connection.toString() : address.toString();
   }
-
+  //弱引用的子类，
   public static final class StreamAllocationReference extends WeakReference<StreamAllocation> {
     /**
      * Captures the stack trace at the time the Call is executed or enqueued. This is helpful for
