@@ -111,7 +111,7 @@ public final class Util {
     }
   }
 
-  /**
+  /**关闭套接字，
    * Closes {@code socket}, ignoring any checked exceptions. Does nothing if {@code socket} is
    * null.
    */
@@ -143,7 +143,7 @@ public final class Util {
     }
   }
 
-  /**
+  /**耗尽source里面的内容的时候，返回true ,,
    * Attempts to exhaust {@code source}, returning true if successful. This is useful when reading a
    * complete source is helpful, such as when doing so completes a cache body or frees a socket
    * connection for reuse.
@@ -426,7 +426,7 @@ public final class Util {
   public static String format(String format, Object... args) {
     return String.format(Locale.US, format, args);
   }
-
+  //根据响应体里面前几个字节判断是什么编码，
   public static Charset bomAwareCharset(BufferedSource source, Charset charset) throws IOException {
     if (source.rangeEquals(0, UTF_8_BOM)) {
       source.skip(UTF_8_BOM.size());

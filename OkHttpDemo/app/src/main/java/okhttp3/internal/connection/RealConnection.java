@@ -403,18 +403,22 @@ public final class RealConnection extends Http2Connection.Listener implements Co
         .build();
   }
 
-  /**
+  /**如果这个链接能够承载一个流分配器到指定的地址，那么返回true
+   * 里面的条件很复杂，但是对于同一个主机，不管是http1还是http2，都是可以重用的，
    * Returns true if this connection can carry a stream allocation to {@code address}. If non-null
    * {@code route} is the resolved route for a connection.
    */
   public boolean isEligible(Address address, @Nullable Route route) {
     // If this connection is not accepting new streams, we're done.
+    //已经超过限制，或者已经标注不能创建新流了，
     if (allocations.size() >= allocationLimit || noNewStreams) return false;
 
     // If the non-host fields of the address don't overlap, we're done.
+    //如果非主机字段不重叠，也就是说非主机字段不全一样，
     if (!Internal.instance.equalsNonHost(this.route.address(), address)) return false;
 
     // If the host exactly matches, we're done: this connection can carry the address.
+    //如果主机地址完全一样，那么完美匹配啦，，，，也就是说不管http1还是http2，对于同一个主机的，都是可以重用的，
     if (address.url().host().equals(this.route().address().url().host())) {
       return true; // This connection is a perfect match.
     }
@@ -431,8 +435,10 @@ public final class RealConnection extends Http2Connection.Listener implements Co
     // hosts, which only happens after route planning. We can't coalesce connections that use a
     // proxy, since proxies don't tell us the origin server's IP address.
     if (route == null) return false;
+    //路由选择还必须是直连，
     if (route.proxy().type() != Proxy.Type.DIRECT) return false;
     if (this.route.proxy().type() != Proxy.Type.DIRECT) return false;
+    //俩个有共同的ip地址，如果服务器用俩个域名，但是ip地址是一样的，客户端使用俩个不同域名进行请求的话，应该是不能重用一条链接的，
     if (!this.route.socketAddress().equals(route.socketAddress())) return false;
 
     // 3. This connection's server certificate's must cover the new host.

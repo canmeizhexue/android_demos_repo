@@ -73,9 +73,10 @@ final class Http2Reader implements Closeable {
     this.continuation = new ContinuationSource(this.source);
     this.hpackReader = new Hpack.Reader(4096, continuation);
   }
-
+  //读取链接前缀帧，
   public void readConnectionPreface(Handler handler) throws IOException {
     if (client) {
+      //我们是客户端，读取设置帧，
       // The client reads the initial SETTINGS frame.
       if (!nextFrame(true, handler)) {
         throw ioException("Required SETTINGS preface not received");
@@ -211,7 +212,7 @@ final class Http2Reader implements Closeable {
 
     short padding = (flags & FLAG_PADDED) != 0 ? (short) (source.readByte() & 0xff) : 0;
     length = lengthWithoutPadding(length, flags, padding);
-
+    //往外层通知，我读取到服务端的数据啦，
     handler.data(inFinished, streamId, source, length);
     source.skip(padding);
   }
@@ -242,7 +243,7 @@ final class Http2Reader implements Closeable {
     }
     handler.rstStream(streamId, errorCode);
   }
-
+  //读取设置，然后通过handler向外发出，
   private void readSettings(Handler handler, int length, byte flags, int streamId)
       throws IOException {
     if (streamId != 0) throw ioException("TYPE_SETTINGS streamId != 0");
@@ -340,6 +341,7 @@ final class Http2Reader implements Closeable {
   }
 
   @Override public void close() throws IOException {
+    //这个会关闭输入流，，，，
     source.close();
   }
 

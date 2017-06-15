@@ -85,7 +85,7 @@ public final class Http2Codec implements HttpCodec {
   private final OkHttpClient client;
   final StreamAllocation streamAllocation;
   private final Http2Connection connection;
-  private Http2Stream stream;
+  private Http2Stream stream;//一个Http2Codec对应一个Http2Stream,,,
 
   public Http2Codec(
       OkHttpClient client, StreamAllocation streamAllocation, Http2Connection connection) {
@@ -97,13 +97,13 @@ public final class Http2Codec implements HttpCodec {
   @Override public Sink createRequestBody(Request request, long contentLength) {
     return stream.getSink();
   }
-
+  //写入请求头，
   @Override public void writeRequestHeaders(Request request) throws IOException {
     if (stream != null) return;
 
     boolean hasRequestBody = request.body() != null;//是否有请求体，
     List<Header> requestHeaders = http2HeadersList(request);
-
+    //创建一个新的流，
     stream = connection.newStream(requestHeaders, hasRequestBody);
     stream.readTimeout().timeout(client.readTimeoutMillis(), TimeUnit.MILLISECONDS);
     stream.writeTimeout().timeout(client.writeTimeoutMillis(), TimeUnit.MILLISECONDS);
@@ -112,11 +112,11 @@ public final class Http2Codec implements HttpCodec {
   @Override public void flushRequest() throws IOException {
     connection.flush();
   }
-
+  //结束请求，
   @Override public void finishRequest() throws IOException {
     stream.getSink().close();
   }
-
+  //读取响应头，
   @Override public Response.Builder readResponseHeaders(boolean expectContinue) throws IOException {
     List<Header> headers = stream.takeResponseHeaders();
     //读取响应头

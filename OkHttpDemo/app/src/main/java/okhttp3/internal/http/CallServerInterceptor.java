@@ -64,6 +64,8 @@ public final class CallServerInterceptor implements Interceptor {
         // Write the request body if the "Expect: 100-continue" expectation was met.
         Sink requestBodyOut = httpCodec.createRequestBody(request, request.body().contentLength());
         BufferedSink bufferedRequestBody = Okio.buffer(requestBodyOut);
+
+
         //写入请求体，，
         request.body().writeTo(bufferedRequestBody);
         bufferedRequestBody.close();
@@ -78,6 +80,7 @@ public final class CallServerInterceptor implements Interceptor {
     httpCodec.finishRequest();
 
     if (responseBuilder == null) {
+      //读取响应头
       responseBuilder = httpCodec.readResponseHeaders(false);
     }
 
@@ -95,6 +98,7 @@ public final class CallServerInterceptor implements Interceptor {
           .body(Util.EMPTY_RESPONSE)
           .build();
     } else {
+      //这个地方还没有把数据读取出来，还只是建立关系而已，
       response = response.newBuilder()
           .body(httpCodec.openResponseBody(response))
           .build();

@@ -186,6 +186,7 @@ public final class HttpHeaders {
   public static boolean hasBody(Response response) {
     // HEAD requests never yield a body regardless of the response headers.
     if (response.request().method().equals("HEAD")) {
+      //HEAD请求只有响应头，没有响应体
       return false;
     }
 

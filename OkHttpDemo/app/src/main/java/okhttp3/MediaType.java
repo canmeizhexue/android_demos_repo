@@ -21,7 +21,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.annotation.Nullable;
 
-/**媒体类型
+/**媒体类型，
  * An <a href="http://tools.ietf.org/html/rfc2045">RFC 2045</a> Media Type, appropriate to describe
  * the content type of an HTTP request or response body.
  */
@@ -33,8 +33,8 @@ public final class MediaType {
       ";\\s*(?:" + TOKEN + "=(?:" + TOKEN + "|" + QUOTED + "))?");
 
   private final String mediaType;
-  private final String type;
-  private final String subtype;
+  private final String type;//主类型
+  private final String subtype;//子类型
   private final @Nullable String charset;
 
   private MediaType(String mediaType, String type, String subtype, @Nullable String charset) {
@@ -82,7 +82,7 @@ public final class MediaType {
     return new MediaType(string, type, subtype, charset);
   }
 
-  /**
+  /**返回主类型，
    * Returns the high-level media type, such as "text", "image", "audio", "video", or
    * "application".
    */
@@ -90,7 +90,7 @@ public final class MediaType {
     return type;
   }
 
-  /**
+  /**返回子类型
    * Returns a specific media subtype, such as "plain" or "png", "mpeg", "mp4" or "xml".
    */
   public String subtype() {

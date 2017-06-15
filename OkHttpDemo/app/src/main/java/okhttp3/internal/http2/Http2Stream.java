@@ -28,7 +28,7 @@ import okio.Sink;
 import okio.Source;
 import okio.Timeout;
 
-/** 逻辑双向流，A logical bidirectional stream. */
+/** 逻辑双向流，不同的流有不同的缓冲区   A logical bidirectional stream. */
 public final class Http2Stream {
   // Internal state is guarded by this. No long-running or potentially
   // blocking operations are performed while the lock is held.
@@ -60,7 +60,7 @@ public final class Http2Stream {
   /** True if response headers have been sent or received. */
   private boolean hasResponseHeaders;
 
-  private final FramingSource source;
+  private final FramingSource source;//用来缓存从服务器读取到的数据，等待客户端来读取响应，
   final FramingSink sink;
   final StreamTimeout readTimeout = new StreamTimeout();
   final StreamTimeout writeTimeout = new StreamTimeout();
@@ -114,7 +114,7 @@ public final class Http2Stream {
     return true;
   }
 
-  /** Returns true if this stream was created by this peer. */
+  /** 这个流是我们创建的，那么返回true,Returns true if this stream was created by this peer. */
   public boolean isLocallyInitiated() {
     boolean streamIsClient = ((id & 1) == 1);
     return connection.client == streamIsClient;
@@ -128,7 +128,7 @@ public final class Http2Stream {
     return requestHeaders;
   }
 
-  /**
+  /**可能会阻塞，
    * Removes and returns the stream's received response headers, blocking if necessary until headers
    * have been received. If the returned list contains multiple blocks of headers the blocks will be
    * delimited by 'null'.
@@ -195,7 +195,7 @@ public final class Http2Stream {
     return writeTimeout;
   }
 
-  /** Returns a source that reads data from the peer. */
+  /** 返回一个source,是从输入流读取数据  Returns a source that reads data from the peer. */
   public Source getSource() {
     return source;
   }
@@ -253,7 +253,7 @@ public final class Http2Stream {
     connection.removeStream(id);
     return true;
   }
-
+  //接收到了响应头，
   void receiveHeaders(List<Header> headers) {
     assert (!Thread.holdsLock(Http2Stream.this));
     boolean open = true;
@@ -275,7 +275,7 @@ public final class Http2Stream {
       connection.removeStream(id);
     }
   }
-
+  //接收到服务端的数据，
   void receiveData(BufferedSource in, int length) throws IOException {
     assert (!Thread.holdsLock(Http2Stream.this));
     this.source.receive(in, length);
@@ -301,13 +301,13 @@ public final class Http2Stream {
     }
   }
 
-  /**
+  /**读取数据帧，
    * A source that reads the incoming data frames of a stream. Although this class uses
    * synchronization to safely receive incoming data frames, it is not intended for use by multiple
    * readers.
    */
   private final class FramingSource implements Source {
-    /** Buffer to receive data from the network into. Only accessed by the reader thread. */
+    /** 从网络接收数据， Buffer to receive data from the network into. Only accessed by the reader thread. */
     private final Buffer receiveBuffer = new Buffer();
 
     /** Buffer with readable data. Guarded by Http2Stream.this. */
@@ -328,23 +328,26 @@ public final class Http2Stream {
     FramingSource(long maxByteCount) {
       this.maxByteCount = maxByteCount;
     }
-
+    //从当前source里面读取数据，放入sink,
     @Override public long read(Buffer sink, long byteCount) throws IOException {
       if (byteCount < 0) throw new IllegalArgumentException("byteCount < 0: " + byteCount);
 
       long read;
       synchronized (Http2Stream.this) {
+        //等待，直到有数据可以读，
         waitUntilReadable();
         checkNotClosed();
         if (readBuffer.size() == 0) return -1; // This source is exhausted.
 
         // Move bytes from the read buffer into the caller's buffer.
+        //将数据从readBuffer里面放入sink里面，
         read = readBuffer.read(sink, Math.min(byteCount, readBuffer.size()));
 
         // Flow control: notify the peer that we're ready for more data!
         unacknowledgedBytesRead += read;
         if (unacknowledgedBytesRead
             >= connection.okHttpSettings.getInitialWindowSize() / 2) {
+          //告诉服务器，这个流已经准备好接收更多数据了，
           connection.writeWindowUpdateLater(id, unacknowledgedBytesRead);
           unacknowledgedBytesRead = 0;
         }
@@ -363,10 +366,11 @@ public final class Http2Stream {
       return read;
     }
 
-    /** Returns once the source is either readable or finished. */
+    /** 一直等，直到有数据，或者结束了 Returns once the source is either readable or finished. */
     private void waitUntilReadable() throws IOException {
       readTimeout.enter();
       try {
+        //那么是谁往这个readBuffer里面放入数据的呢？
         while (readBuffer.size() == 0 && !finished && !closed && errorCode == null) {
           waitForIo();
         }
@@ -376,6 +380,7 @@ public final class Http2Stream {
     }
 
     void receive(BufferedSource in, long byteCount) throws IOException {
+      //检测当前线程并没有持有这个锁，
       assert (!Thread.holdsLock(Http2Stream.this));
 
       while (byteCount > 0) {
@@ -387,6 +392,7 @@ public final class Http2Stream {
         }
 
         // If the peer sends more data than we can handle, discard it and close the connection.
+        //如果对端发送的数据超过了我们能处理的数量，丢弃数据，
         if (flowControlError) {
           in.skip(byteCount);
           closeLater(ErrorCode.FLOW_CONTROL_ERROR);
@@ -400,15 +406,20 @@ public final class Http2Stream {
         }
 
         // Fill the receive buffer without holding any locks.
+        //从in里面将数据读入receiveBuffer,,
         long read = in.read(receiveBuffer, byteCount);
         if (read == -1) throw new EOFException();
+
+        //页就是说这个地方每次都能将in里面的数据读完？
         byteCount -= read;
 
         // Move the received data to the read buffer to the reader can read it.
+        //将数据从receiveBuffer移动到readBuffer，以便可以获取响应
         synchronized (Http2Stream.this) {
           boolean wasEmpty = readBuffer.size() == 0;
           readBuffer.writeAll(receiveBuffer);
           if (wasEmpty) {
+            //之前是空的，现在通知他们可以读取数据啦，
             Http2Stream.this.notifyAll();
           }
         }
@@ -427,7 +438,7 @@ public final class Http2Stream {
       }
       cancelStreamIfNecessary();
     }
-
+    //检查流没有被关闭，
     private void checkNotClosed() throws IOException {
       if (closed) {
         throw new IOException("stream closed");
@@ -482,7 +493,7 @@ public final class Http2Stream {
       }
     }
 
-    /**
+    /**发送帧，
      * Emit a single data frame to the connection. The frame's size be limited by this stream's
      * write window. This method will block until the write window is nonempty.
      */
@@ -505,6 +516,7 @@ public final class Http2Stream {
 
       writeTimeout.enter();
       try {
+        //往http2Connection里面发送数据，不过要指定指定的流id
         connection.writeData(id, outFinished && toWrite == sendBuffer.size(), sendBuffer, toWrite);
       } finally {
         writeTimeout.exitAndThrowIfTimedOut();
@@ -538,6 +550,7 @@ public final class Http2Stream {
             emitFrame(true);
           }
         } else {
+          //发送一个空帧，这样可以设置结束流标记
           // Send an empty frame just so we can set the END_STREAM flag.
           connection.writeData(id, true, null, 0);
         }
@@ -545,7 +558,7 @@ public final class Http2Stream {
       synchronized (Http2Stream.this) {
         closed = true;
       }
-      connection.flush();
+      connection.flush();//将数据发送出去，
       cancelStreamIfNecessary();
     }
   }
@@ -568,7 +581,7 @@ public final class Http2Stream {
     }
   }
 
-  /**
+  /**一直等待，，
    * Like {@link #wait}, but throws an {@code InterruptedIOException} when interrupted instead of
    * the more awkward {@link InterruptedException}.
    */

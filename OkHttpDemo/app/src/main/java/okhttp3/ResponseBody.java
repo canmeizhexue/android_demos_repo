@@ -33,6 +33,7 @@ import static okhttp3.internal.Util.UTF_8;
  * response body. Each response body is supported by an active connection to the webserver. This
  * imposes both obligations and limits on the client application.
  *
+ * 响应体必须要关闭
  * <h3>The response body must be closed.</h3>
  *
  * Each response body is backed by a limited resource like a socket (live network responses) or
@@ -53,6 +54,8 @@ import static okhttp3.internal.Util.UTF_8;
  *   <li>Response.body().string()</li>
  * </ul>
  *
+ *
+ * 对于同一个响应体多次调用close方法不会有额外的好处，只需要调用一次就可以了
  * <p>There is no benefit to invoking multiple {@code close()} methods for the same response body.
  *
  * <p>For synchronous calls, the easiest way to make sure a response body is closed is with a {@code
@@ -67,6 +70,7 @@ import static okhttp3.internal.Util.UTF_8;
  *   }
  * }</pre>
  *
+ * 使用Call的enqueue方法进行异步调用
  * You can use a similar block for asynchronous calls: <pre>   {@code
  *
  *   Call call = client.newCall(request);
@@ -83,17 +87,21 @@ import static okhttp3.internal.Util.UTF_8;
  *   });
  * }</pre>
  *
+ *
  * These examples will not work if you're consuming the response body on another thread. In such
  * cases the consuming thread must call {@link #close} when it has finished reading the response
  * body.
- *
+ *响应体只能被消费一次
  * <h3>The response body can be consumed only once.</h3>
  *
+ *
+ * 这个类可以流化非常大的响应体，甚至可以超越机器的存储空间，比如视频流应用
  * <p>This class may be used to stream very large responses. For example, it is possible to use this
  * class to read a response that is larger than the entire memory allocated to the current process.
  * It can even stream a response larger than the total storage on the current device, which is a
  * common requirement for video streaming applications.
  *
+ * 这个类不会将整个响应体缓存到内存，
  * <p>Because this class does not buffer the full response in memory, the application may not
  * re-read the bytes of the response. Use this one shot to read the entire response into memory with
  * {@link #bytes()} or {@link #string()}. Or stream the response with either {@link #source()},
@@ -117,9 +125,9 @@ public abstract class ResponseBody implements Closeable {
 
   public abstract BufferedSource source();
 
-  /**
+  /**把响应体作为字节数组返回，
    * Returns the response as a byte array.
-   *
+   *这个方法会把整个响应体加入到内存，，，如果数据量很大的话，那么就会导致OOM
    * <p>This method loads entire response body into memory. If the response body is very large this
    * may trigger an {@link OutOfMemoryError}. Prefer to stream the response body if this is a
    * possibility for your response.
@@ -133,6 +141,7 @@ public abstract class ResponseBody implements Closeable {
     BufferedSource source = source();
     byte[] bytes;
     try {
+      //读出整个流的内容，
       bytes = source.readByteArray();
     } finally {
       Util.closeQuietly(source);
@@ -147,7 +156,7 @@ public abstract class ResponseBody implements Closeable {
     return bytes;
   }
 
-  /**
+  /**返回字符流
    * Returns the response as a character stream decoded with the charset of the Content-Type header.
    * If that header is either absent or lacks a charset, this will attempt to decode the response
    * body in accordance to <a href="https://en.wikipedia.org/wiki/Byte_order_mark">its BOM</a> or
@@ -179,6 +188,7 @@ public abstract class ResponseBody implements Closeable {
   }
 
   private Charset charset() {
+    //ContentType里面可能也有编码信息，
     MediaType contentType = contentType();
     return contentType != null ? contentType.charset(UTF_8) : UTF_8;
   }

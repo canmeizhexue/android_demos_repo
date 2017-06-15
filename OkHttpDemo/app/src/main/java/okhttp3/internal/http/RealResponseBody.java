@@ -30,6 +30,7 @@ public final class RealResponseBody extends ResponseBody {
   }
 
   @Override public MediaType contentType() {
+    //响应头里面的包含响应体的内容类型，，
     String contentType = headers.get("Content-Type");
     return contentType != null ? MediaType.parse(contentType) : null;
   }

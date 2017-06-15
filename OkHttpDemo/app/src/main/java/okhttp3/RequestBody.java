@@ -24,7 +24,7 @@ import okio.BufferedSink;
 import okio.ByteString;
 import okio.Okio;
 import okio.Source;
-
+//请求体
 public abstract class RequestBody {
   /** Returns the Content-Type header for this body. */
   public abstract @Nullable MediaType contentType();

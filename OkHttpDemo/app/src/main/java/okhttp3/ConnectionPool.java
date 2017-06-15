@@ -121,9 +121,10 @@ public final class ConnectionPool {
    * route is null if the address has not yet been routed.
    */
   @Nullable RealConnection get(Address address, StreamAllocation streamAllocation, Route route) {
+    //检测是否持有这个锁，
     assert (Thread.holdsLock(this));
     for (RealConnection connection : connections) {
-      //TODO 后续再看，
+
       if (connection.isEligible(address, route)) {
         streamAllocation.acquire(connection);
         return connection;
@@ -157,7 +158,7 @@ public final class ConnectionPool {
     connections.add(connection);
   }
 
-  /**
+  /**通知连接池，指定的链接现在变得空闲了，将指定的链接从连接池移除
    * Notify this pool that {@code connection} has become idle. Returns true if the connection has
    * been removed from the pool and should be closed.
    */

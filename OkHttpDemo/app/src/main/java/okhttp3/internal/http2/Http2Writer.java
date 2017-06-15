@@ -61,7 +61,7 @@ final class Http2Writer implements Closeable {
     this.hpackWriter = new Hpack.Writer(hpackBuffer);
     this.maxFrameSize = INITIAL_MAX_FRAME_SIZE;
   }
-
+  //发送链接前缀帧，
   public synchronized void connectionPreface() throws IOException {
     if (closed) throw new IOException("closed");
     if (!client) return; // Nothing to write; servers don't send connection headers!
@@ -172,7 +172,7 @@ final class Http2Writer implements Closeable {
     if (outFinished) flags |= FLAG_END_STREAM;
     dataFrame(streamId, flags, source, byteCount);
   }
-
+  //数据帧，
   void dataFrame(int streamId, byte flags, Buffer buffer, int byteCount) throws IOException {
     byte type = TYPE_DATA;
     frameHeader(streamId, byteCount, type, flags);
@@ -181,7 +181,7 @@ final class Http2Writer implements Closeable {
     }
   }
 
-  /** Write okhttp's settings to the peer. */
+  /** 往服务器发送配置信息  Write okhttp's settings to the peer. */
   public synchronized void settings(Settings settings) throws IOException {
     if (closed) throw new IOException("closed");
     int length = settings.size() * 6;
@@ -244,7 +244,7 @@ final class Http2Writer implements Closeable {
     sink.flush();
   }
 
-  /**
+  /**如果streamId=0,那么是通知对方，开始链接，否则的话，就是streamId指定的流可以额外发送多少数据
    * Inform peer that an additional {@code windowSizeIncrement} bytes can be sent on {@code
    * streamId}, or the connection if {@code streamId} is zero.
    */
@@ -261,7 +261,7 @@ final class Http2Writer implements Closeable {
     sink.writeInt((int) windowSizeIncrement);
     sink.flush();
   }
-
+  //写入帧头，
   public void frameHeader(int streamId, int length, byte type, byte flags) throws IOException {
     if (logger.isLoggable(FINE)) logger.fine(frameLog(false, streamId, length, type, flags));
     if (length > maxFrameSize) {

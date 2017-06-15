@@ -127,8 +127,10 @@ public final class Http2Connection implements Closeable {
     client = builder.client;
     listener = builder.listener;
     // http://tools.ietf.org/html/draft-ietf-httpbis-http2-17#section-5.1.1
+    //客户端是奇数，服务端是偶数，
     nextStreamId = builder.client ? 1 : 2;
     if (builder.client) {
+      //http2里面，客户端的流是从3开始的
       nextStreamId += 2; // In HTTP/2, 1 on client is reserved for Upgrade.
     }
 
@@ -197,7 +199,7 @@ public final class Http2Connection implements Closeable {
     return newStream(associatedStreamId, requestHeaders, out);
   }
 
-  /**
+  /**返回一个新的本地初始化的流，
    * Returns a new locally-initiated stream.
    * @param out true to create an output stream that we can use to send data to the remote peer.
    * Corresponds to {@code FLAG_FIN}.
@@ -221,13 +223,16 @@ public final class Http2Connection implements Closeable {
         }
         streamId = nextStreamId;
         nextStreamId += 2;
+        //新建一个http2流，
         stream = new Http2Stream(streamId, this, outFinished, inFinished, requestHeaders);
         flushHeaders = !out || bytesLeftInWriteWindow == 0L || stream.bytesLeftInWriteWindow == 0L;
         if (stream.isOpen()) {
+          //将这个流保存起来，
           streams.put(streamId, stream);
         }
       }
       if (associatedStreamId == 0) {
+        //通知服务端，我们已经建立了一个新流，
         writer.synStream(outFinished, streamId, associatedStreamId, requestHeaders);
       } else if (client) {
         throw new IllegalArgumentException("client streams shouldn't have associated stream IDs");
@@ -549,7 +554,7 @@ public final class Http2Connection implements Closeable {
     }
   }
 
-  /**
+  /**有名的Runnable
    * Methods in this class must not lock FrameWriter.  If a method needs to write a frame, create an
    * async task to do so.
    */
@@ -567,7 +572,7 @@ public final class Http2Connection implements Closeable {
       try {
         //读取链接前缀帧
         reader.readConnectionPreface(this);
-        //死循环读取数据，
+        //死循环读取数据，有专门的线程一直在向服务器读取数据，读到数据后缓存起来了，然后等待客户端来读取数据啦，
         while (reader.nextFrame(false, this)) {
         }
         connectionErrorCode = ErrorCode.NO_ERROR;
@@ -580,6 +585,7 @@ public final class Http2Connection implements Closeable {
           close(connectionErrorCode, streamErrorCode);
         } catch (IOException ignored) {
         }
+
         Util.closeQuietly(reader);
       }
     }
@@ -587,16 +593,18 @@ public final class Http2Connection implements Closeable {
     @Override public void data(boolean inFinished, int streamId, BufferedSource source, int length)
         throws IOException {
       if (pushedStream(streamId)) {
-        //推流，
+        //推流，来自于服务器发起的流
         pushDataLater(streamId, source, length, inFinished);
         return;
       }
+      //获取对应流id的http2Stream，，
       Http2Stream dataStream = getStream(streamId);
       if (dataStream == null) {
         writeSynResetLater(streamId, ErrorCode.PROTOCOL_ERROR);
         source.skip(length);
         return;
       }
+      //接收到服务端的数据，，，
       dataStream.receiveData(source, length);
       if (inFinished) {
         dataStream.receiveFin();
@@ -676,6 +684,7 @@ public final class Http2Connection implements Closeable {
             addBytesToWriteWindow(delta);
             receivedInitialPeerSettings = true;
           }
+          //最开始是空的，
           if (!streams.isEmpty()) {
             streamsToNotify = streams.values().toArray(new Http2Stream[streams.size()]);
           }
@@ -774,7 +783,7 @@ public final class Http2Connection implements Closeable {
     }
   }
 
-  /** 判断是否是推流，偶数，Even, positive numbered streams are pushed streams in HTTP/2. */
+  /** 判断是否是推流，偶数，是来自服务端发起的流  Even, positive numbered streams are pushed streams in HTTP/2. */
   boolean pushedStream(int streamId) {
     return streamId != 0 && (streamId & 1) == 0;
   }

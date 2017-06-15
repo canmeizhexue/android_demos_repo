@@ -32,7 +32,7 @@ import okhttp3.internal.http2.StreamResetException;
 
 import static okhttp3.internal.Util.closeQuietly;
 
-/**这个类协调三个实体之间的关系
+/**这个类协调三个实体之间的关系，每一个请求都会有一个全新的StreamAllocation对象，
  * This class coordinates the relationship between three entities:
  *
  *
@@ -207,24 +207,26 @@ public final class StreamAllocation {
 
       //构建一个RealConnection，，这个时候这个selectedRoute肯定不为null了，，
       result = new RealConnection(connectionPool, selectedRoute);
-
+      //将connection和StreamAllocation进行关联，
       acquire(result);
     }
 
     // Do TCP + TLS handshakes. This is a blocking operation.
-    //进行链接，
+    //进行链接，底层会创建套接字，进行握手等操作，
     result.connect(connectTimeout, readTimeout, writeTimeout, connectionRetryEnabled);
 
     routeDatabase().connected(result.route());
 
     Socket socket = null;
     synchronized (connectionPool) {
+      //将链接加入连接池，，，
       // Pool the connection.
       Internal.instance.put(connectionPool, result);
 
       // If another multiplexed connection to the same address was created concurrently, then
       // release this connection and acquire that one.
       if (result.isMultiplexed()) {
+        //如果同时创建了一个与同一个地址的多路复用的链接，
         socket = Internal.instance.deduplicate(connectionPool, address, this);
         result = connection;
       }
@@ -233,7 +235,7 @@ public final class StreamAllocation {
 
     return result;
   }
-
+  //指定的流结束了，
   public void streamFinished(boolean noNewStreams, HttpCodec codec) {
     Socket socket;
     synchronized (connectionPool) {
@@ -241,6 +243,7 @@ public final class StreamAllocation {
         throw new IllegalStateException("expected " + this.codec + " but was " + codec);
       }
       if (!noNewStreams) {
+        //累加链接的成功次数，
         connection.successCount++;
       }
       socket = deallocate(noNewStreams, false, true);
@@ -279,7 +282,7 @@ public final class StreamAllocation {
     closeQuietly(socket);
   }
 
-  /**
+  /**释放由这个分配器持有的资源，
    * Releases resources held by this allocation. If sufficient resources are allocated, the
    * connection will be detached or closed. Callers must be synchronized on the connection pool.
    *
@@ -287,9 +290,11 @@ public final class StreamAllocation {
    * of the synchronized block. (We don't do I/O while synchronized on the connection pool.)
    */
   private Socket deallocate(boolean noNewStreams, boolean released, boolean streamFinished) {
+    //检测当前线程是否持有指定的锁
     assert (Thread.holdsLock(connectionPool));
 
     if (streamFinished) {
+      //流结束，，，codec清空，，但是socket可以还在，connection也是可以还在的，
       this.codec = null;
     }
     if (released) {
@@ -298,13 +303,16 @@ public final class StreamAllocation {
     Socket socket = null;
     if (connection != null) {
       if (noNewStreams) {
+
         connection.noNewStreams = true;
       }
       if (this.codec == null && (this.released || connection.noNewStreams)) {
+        //释放链接，
         release(connection);
         if (connection.allocations.isEmpty()) {
           connection.idleAtNanos = System.nanoTime();
           if (Internal.instance.connectionBecameIdle(connectionPool, connection)) {
+            //这个链接需要关闭，链接对应的Socket
             socket = connection.socket();
           }
         }
@@ -363,7 +371,7 @@ public final class StreamAllocation {
     closeQuietly(socket);
   }
 
-  /**要和release配对使用，
+  /**要和release配对使用，将指定的Connection和当前的StreamAllocation进行关联
    * Use this allocation to hold {@code connection}. Each call to this must be paired with a call to
    * {@link #release} on the same connection.
    */
@@ -375,7 +383,8 @@ public final class StreamAllocation {
     connection.allocations.add(new StreamAllocationReference(this, callStackTrace));
   }
 
-  /** Remove this allocation from the connection's list of allocations. */
+  /** 难道是一个Socket对应一个Connection,,一个Connection上面可以有多个StreamAllocation?? ???
+   * Remove this allocation from the connection's list of allocations. */
   private void release(RealConnection connection) {
     for (int i = 0, size = connection.allocations.size(); i < size; i++) {
       Reference<StreamAllocation> reference = connection.allocations.get(i);
@@ -396,6 +405,7 @@ public final class StreamAllocation {
    * of the synchronized block. (We don't do I/O while synchronized on the connection pool.)
    */
   public Socket releaseAndAcquire(RealConnection newConnection) {
+    //检测是否持有锁，
     assert (Thread.holdsLock(connectionPool));
     if (codec != null || connection.allocations.size() != 1) throw new IllegalStateException();
 
