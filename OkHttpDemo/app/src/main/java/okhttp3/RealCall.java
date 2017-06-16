@@ -88,6 +88,7 @@ final class RealCall implements Call {
       executed = true;
     }
     captureCallStackTrace();
+    //加入异步请求，最开始的时候都是请求执行，如果请求多了的话就需要缓存起来，
     client.dispatcher().enqueue(new AsyncCall(responseCallback));
   }
 

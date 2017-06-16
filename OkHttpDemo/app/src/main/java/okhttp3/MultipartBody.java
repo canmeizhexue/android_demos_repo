@@ -137,7 +137,7 @@ public final class MultipartBody extends RequestBody {
       sink.write(DASHDASH);
       sink.write(boundary);
       sink.write(CRLF);
-
+      //每一部分也可以有头，
       if (headers != null) {
         for (int h = 0, headerCount = headers.size(); h < headerCount; h++) {
           sink.writeUtf8(headers.name(h))
@@ -148,6 +148,7 @@ public final class MultipartBody extends RequestBody {
       }
 
       MediaType contentType = body.contentType();
+      //需要写每个部分的类型和内容长度
       if (contentType != null) {
         sink.writeUtf8("Content-Type: ")
             .writeUtf8(contentType.toString())
@@ -170,6 +171,7 @@ public final class MultipartBody extends RequestBody {
       if (countBytes) {
         byteCount += contentLength;
       } else {
+        //写入内容，
         body.writeTo(sink);
       }
 
@@ -232,9 +234,11 @@ public final class MultipartBody extends RequestBody {
         throw new NullPointerException("body == null");
       }
       if (headers != null && headers.get("Content-Type") != null) {
+        //头里面不能有这个，因为合成时会再次计算一次
         throw new IllegalArgumentException("Unexpected header: Content-Type");
       }
       if (headers != null && headers.get("Content-Length") != null) {
+        //头里面不能有这个，因为合成时会再次计算一次
         throw new IllegalArgumentException("Unexpected header: Content-Length");
       }
       return new Part(headers, body);
@@ -275,9 +279,9 @@ public final class MultipartBody extends RequestBody {
       return body;
     }
   }
-
+  //每个RequestBody都可以作为MultipartBody的一个part,
   public static final class Builder {
-    private final ByteString boundary;
+    private final ByteString boundary;//也就是说分割线可以随便的？
     private MediaType type = MIXED;
     private final List<Part> parts = new ArrayList<>();
 

@@ -186,7 +186,7 @@ public final class Http2Connection implements Closeable {
     return peerSettings.getMaxConcurrentStreams(Integer.MAX_VALUE);
   }
 
-  /**
+  /**返回一个服务端发起的流
    * Returns a new server-initiated stream.
    *
    * @param associatedStreamId the stream that triggered the sender to create this stream.
@@ -253,7 +253,7 @@ public final class Http2Connection implements Closeable {
     writer.synReply(outFinished, streamId, alternating);
   }
 
-  /**
+  /**发送数据
    * Callers of this method are not thread safe, and sometimes on application threads. Most often,
    * this method will be called to send a buffer worth of data to the peer.
    *
@@ -294,6 +294,7 @@ public final class Http2Connection implements Closeable {
       }
 
       byteCount -= toWrite;
+      //调用http2Writer，发送数据，里面会拼装成数据帧再发送，
       writer.data(outFinished && byteCount == 0, streamId, buffer, toWrite);
     }
   }
@@ -559,7 +560,7 @@ public final class Http2Connection implements Closeable {
    * async task to do so.
    */
   class ReaderRunnable extends NamedRunnable implements Http2Reader.Handler {
-    final Http2Reader reader;
+    final Http2Reader reader;//直接对应socket的输入流
 
     ReaderRunnable(Http2Reader reader) {
       super("OkHttp %s", hostname);
@@ -597,6 +598,7 @@ public final class Http2Connection implements Closeable {
         pushDataLater(streamId, source, length, inFinished);
         return;
       }
+      //到达这里说明这个流是客户端发起的，
       //获取对应流id的http2Stream，，
       Http2Stream dataStream = getStream(streamId);
       if (dataStream == null) {

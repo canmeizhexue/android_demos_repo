@@ -100,7 +100,7 @@ public abstract class RequestBody {
     };
   }
 
-  /** Returns a new request body that transmits the content of {@code file}. */
+  /** 用于上传文件，Returns a new request body that transmits the content of {@code file}. */
   public static RequestBody create(final @Nullable MediaType contentType, final File file) {
     if (file == null) throw new NullPointerException("content == null");
 

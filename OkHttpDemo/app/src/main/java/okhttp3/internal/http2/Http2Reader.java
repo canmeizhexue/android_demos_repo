@@ -93,6 +93,7 @@ final class Http2Reader implements Closeable {
   //除非异常，否则一直返回true,读取到的数据通过第二个参数Handler发出去，
   public boolean nextFrame(boolean requireSettings, Handler handler) throws IOException {
     try {
+      //这个地方一直等，直到缓冲区有指定字节的数据的时候才会返回，底层就是在等输入流的数据
       source.require(9); // Frame header size
     } catch (IOException e) {
       return false; // This might be a normal socket close.
@@ -212,8 +213,9 @@ final class Http2Reader implements Closeable {
 
     short padding = (flags & FLAG_PADDED) != 0 ? (short) (source.readByte() & 0xff) : 0;
     length = lengthWithoutPadding(length, flags, padding);
-    //往外层通知，我读取到服务端的数据啦，
+    //往外层通知，我读取到服务端的数据啦，数据还在流里面，
     handler.data(inFinished, streamId, source, length);
+    //填充是在数据的后面
     source.skip(padding);
   }
 

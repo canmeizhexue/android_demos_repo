@@ -185,7 +185,7 @@ public final class Dispatcher {
     runningSyncCalls.add(call);
   }
 
-  /** Used by {@code AsyncCall#run} to signal completion. */
+  /** 结束异步请求的时候，会调整并发，也就是会去执行之前缓存起来的异步任务  Used by {@code AsyncCall#run} to signal completion. */
   void finished(AsyncCall call) {
     finished(runningAsyncCalls, call, true);
   }

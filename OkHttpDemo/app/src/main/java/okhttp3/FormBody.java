@@ -18,14 +18,16 @@ package okhttp3;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+
 import javax.annotation.Nullable;
+
 import okhttp3.internal.Util;
 import okio.Buffer;
 import okio.BufferedSink;
 
 import static okhttp3.HttpUrl.FORM_ENCODE_SET;
 import static okhttp3.HttpUrl.percentDecode;
-
+//表单，名称和值都是编码的，
 public final class FormBody extends RequestBody {
   private static final MediaType CONTENT_TYPE =
       MediaType.parse("application/x-www-form-urlencoded");
@@ -103,7 +105,9 @@ public final class FormBody extends RequestBody {
   }
 
   public static final class Builder {
+    //经过了编码处理
     private final List<String> names = new ArrayList<>();
+    //经过了编码处理，
     private final List<String> values = new ArrayList<>();
 
     public Builder add(String name, String value) {

@@ -35,7 +35,7 @@ public interface BufferedSource extends Source {
    */
   boolean exhausted() throws IOException;
 
-  /**
+  /**当缓冲区里面至少包含指定字节数量的数据，就返回，这是一个阻塞操作
    * Returns when the buffer contains at least {@code byteCount} bytes. Throws an
    * {@link java.io.EOFException} if the source is exhausted before the required bytes can be read.
    */

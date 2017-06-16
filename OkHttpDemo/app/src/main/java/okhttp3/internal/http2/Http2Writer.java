@@ -157,7 +157,7 @@ final class Http2Writer implements Closeable {
     return maxFrameSize;
   }
 
-  /**
+  /**发送数据，里面会组装数据帧
    * {@code source.length} may be longer than the max length of the variant's data frame.
    * Implementations must send multiple frames as necessary.
    *
@@ -213,6 +213,7 @@ final class Http2Writer implements Closeable {
     byte type = TYPE_PING;
     byte flags = ack ? FLAG_ACK : FLAG_NONE;
     int streamId = 0;
+      //ping帧是往特定预留的流里面发的，
     frameHeader(streamId, length, type, flags);
     sink.writeInt(payload1);
     sink.writeInt(payload2);

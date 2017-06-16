@@ -310,7 +310,7 @@ public final class Http2Stream {
     /** 从网络接收数据， Buffer to receive data from the network into. Only accessed by the reader thread. */
     private final Buffer receiveBuffer = new Buffer();
 
-    /** Buffer with readable data. Guarded by Http2Stream.this. */
+    /**供其他线程到这里读取网络响应  Buffer with readable data. Guarded by Http2Stream.this. */
     private final Buffer readBuffer = new Buffer();
 
     /** Maximum number of bytes to buffer before reporting a flow control error. */
@@ -468,11 +468,11 @@ public final class Http2Stream {
     }
   }
 
-  /** A sink that writes outgoing data frames of a stream. This class is not thread safe. */
+  /** 维护这个流发送数据  A sink that writes outgoing data frames of a stream. This class is not thread safe. */
   final class FramingSink implements Sink {
     private static final long EMIT_BUFFER_SIZE = 16384;
 
-    /**
+    /**发送缓冲区，到达一定量的时候才会发送
      * Buffer of outgoing data. This batches writes of small writes into this sink as larges frames
      * written to the outgoing connection. Batching saves the (small) framing overhead.
      */

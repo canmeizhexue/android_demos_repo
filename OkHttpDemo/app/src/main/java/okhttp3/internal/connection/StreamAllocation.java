@@ -198,6 +198,7 @@ public final class StreamAllocation {
         route = selectedRoute;
         return connection;
       }
+      //下面就不是重用的了，重用的在上面某个分支已经返回了
       //第一次就是走的这里，上面的重用机制在第一次是用不到的，
       // Create a connection and assign it to this allocation immediately. This makes it possible
       // for an asynchronous cancel() to interrupt the handshake we're about to do.
