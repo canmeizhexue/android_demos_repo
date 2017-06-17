@@ -117,11 +117,12 @@ public final class ConnectionSpec {
     return supportsTlsExtensions;
   }
 
-  /** Applies this spec to {@code sslSocket}. */
+  /** 将链接配置应用到套接字  Applies this spec to {@code sslSocket}. */
   void apply(SSLSocket sslSocket, boolean isFallback) {
     ConnectionSpec specToApply = supportedSpec(sslSocket, isFallback);
 
     if (specToApply.tlsVersions != null) {
+
       sslSocket.setEnabledProtocols(specToApply.tlsVersions);
     }
     if (specToApply.cipherSuites != null) {
@@ -134,9 +135,11 @@ public final class ConnectionSpec {
    * sslSocket}.
    */
   private ConnectionSpec supportedSpec(SSLSocket sslSocket, boolean isFallback) {
+    //取俩者的交集，都是当前动态支持的
     String[] cipherSuitesIntersection = cipherSuites != null
         ? intersect(CipherSuite.ORDER_BY_NAME, sslSocket.getEnabledCipherSuites(), cipherSuites)
         : sslSocket.getEnabledCipherSuites();
+    //取俩者的交集，都是当前动态支持的
     String[] tlsVersionsIntersection = tlsVersions != null
         ? intersect(Util.NATURAL_ORDER, sslSocket.getEnabledProtocols(), tlsVersions)
         : sslSocket.getEnabledProtocols();
@@ -157,7 +160,11 @@ public final class ConnectionSpec {
         .build();
   }
 
-  /**
+  /**如果当前配置的套接字支持此连接规范，则返回true
+   *
+   * 套接字的加密套件要和链接配置的加密套件相交，链接配置里面至少有一个加密套件匹配套接字启动的加密套件。如果链接配置里面没有加密套件，那么套接字里面至少要有一个加密套件
+   * 套接字的启动的协议要和链接配置的协议要相交，链接配置里面至少有一个协议匹配套接字里面启动的协议
+   *
    * Returns {@code true} if the socket, as currently configured, supports this connection spec. In
    * order for a socket to be compatible the enabled cipher suites and protocols must intersect.
    *

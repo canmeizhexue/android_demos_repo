@@ -203,7 +203,7 @@ public final class Util {
     };
   }
 
-  /**
+  /**取俩者的交集，顺序还是和第一个数组一样
    * Returns an array containing only elements found in {@code first} and also in {@code
    * second}. The returned elements are in the same order as in {@code first}.
    */
@@ -222,7 +222,7 @@ public final class Util {
     return result.toArray(new String[result.size()]);
   }
 
-  /**
+  /**只要第一个数组里面有一个元素存在第二个数组中，
    * Returns true if there is an element in {@code first} that is also in {@code second}. This
    * method terminates if any intersection is found. The sizes of both arguments are assumed to be
    * so small, and the likelihood of an intersection so great, that it is not worth the CPU cost of

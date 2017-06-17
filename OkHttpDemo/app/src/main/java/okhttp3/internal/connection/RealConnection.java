@@ -287,7 +287,7 @@ public final class RealConnection extends Http2Connection.Listener implements Co
       }
 
       // Force handshake. This can throw!
-      //开始握手，，，
+      //开始握手，，，这个地方会得到对端的一些信息，比如对方是否支持http2才对吧，
       sslSocket.startHandshake();
       Handshake unverifiedHandshake = Handshake.get(sslSocket.getSession());
 
@@ -316,7 +316,9 @@ public final class RealConnection extends Http2Connection.Listener implements Co
       //sink对应的是套接字的输出流
       sink = Okio.buffer(Okio.sink(socket));
       handshake = unverifiedHandshake;
-      //协议信息，
+      //协议信息，之前OkHttpClient设置了支持http1.1 和http2.0
+
+
       protocol = maybeProtocol != null
           ? Protocol.get(maybeProtocol)
           : Protocol.HTTP_1_1;

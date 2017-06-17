@@ -35,7 +35,7 @@ import java.util.TreeMap;
  * from conscrypt, which lists the cipher suites supported by Android.
  */
 public final class CipherSuite {
-  /**
+  /**忽略前缀进行比较
    * Compares cipher suites names like "TLS_RSA_WITH_NULL_MD5" and "SSL_RSA_WITH_NULL_MD5", ignoring
    * the "TLS_" or "SSL_" prefix which is not consistent across platforms. In particular some IBM
    * JVMs use the "SSL_" prefix everywhere whereas Oracle JVMs mix "TLS_" and "SSL_".

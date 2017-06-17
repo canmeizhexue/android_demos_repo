@@ -6324,8 +6324,8 @@ Http2Reader.Handler,这里就是ReaderRunnable
 <XPD:OBJ name="OwnedViews[1]" type="UMLNoteView" guid="JGQMNP6mDk6b/4yk2fu+wQAA">
 <XPD:ATTR name="LineColor" type="string">clMaroon</XPD:ATTR>
 <XPD:ATTR name="FillColor" type="string">$00B9FFFF</XPD:ATTR>
-<XPD:ATTR name="Left" type="integer">276</XPD:ATTR>
-<XPD:ATTR name="Top" type="integer">524</XPD:ATTR>
+<XPD:ATTR name="Left" type="integer">188</XPD:ATTR>
+<XPD:ATTR name="Top" type="integer">396</XPD:ATTR>
 <XPD:ATTR name="Width" type="integer">841</XPD:ATTR>
 <XPD:ATTR name="Height" type="integer">53</XPD:ATTR>
 <XPD:ATTR name="Text" type="string">1.针对每个http请求，应该共享OkHttpClient、ConnectionPool、RealConnection（需要特定的条件,进而可能共享Http2Connection）

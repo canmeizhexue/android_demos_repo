@@ -251,11 +251,14 @@ public class OkHttpClient implements Cloneable, Call.Factory, WebSocket.Factory 
     for (ConnectionSpec spec : connectionSpecs) {
       isTLS = isTLS || spec.isTls();
     }
-
+    //isTLS默认为true,因为ConnectionSpec.MODERN_TLS
+    //默认Builder里面sslSocketFactory
     if (builder.sslSocketFactory != null || !isTLS) {
       this.sslSocketFactory = builder.sslSocketFactory;
       this.certificateChainCleaner = builder.certificateChainCleaner;
     } else {
+      //默认的值，运行的时候打印出来的 -----x509TrustManager------------com.android.org.conscrypt.TrustManagerImpl
+      //  -----sslSocketFactory------------com.android.org.conscrypt.OpenSSLSocketFactoryImpl
       X509TrustManager trustManager = systemDefaultTrustManager();
       this.sslSocketFactory = systemDefaultSslSocketFactory(trustManager);
       this.certificateChainCleaner = CertificateChainCleaner.get(trustManager);
