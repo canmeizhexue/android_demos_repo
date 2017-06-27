@@ -53,6 +53,7 @@ public final class Address {
       @Nullable CertificatePinner certificatePinner, Authenticator proxyAuthenticator,
       @Nullable Proxy proxy, List<Protocol> protocols, List<ConnectionSpec> connectionSpecs,
       ProxySelector proxySelector) {
+
     this.url = new HttpUrl.Builder()
         .scheme(sslSocketFactory != null ? "https" : "http")
         .host(uriHost)

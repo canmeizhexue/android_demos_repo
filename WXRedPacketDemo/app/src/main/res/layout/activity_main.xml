@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="com.canmeizhexue.silence.wxredpacketdemo.MainActivity"
+    android:orientation="vertical">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Hello World!"
+        android:id="@+id/spendTime"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintLeft_toLeftOf="parent"
+        app:layout_constraintRight_toRightOf="parent"
+        app:layout_constraintTop_toTopOf="parent"/>
+    <EditText
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/delay_time"
+        android:hint="change the delay time in ms"
+        android:inputType="number"
+        android:layout_marginTop="15dp"/>
+    <TextView
+        android:layout_width="100dp"
+        android:layout_height="50dp"
+        android:text="Save "
+        android:id="@+id/save"
+        android:gravity="center"
+        android:background="#999999"
+        android:layout_marginTop="15dp"/>
+</LinearLayout>
