@@ -92,7 +92,7 @@ public final class HttpHeaders {
     return varyFields(response.headers());
   }
 
-  /**
+  /**缓存一致性判断的时候请求头里面要用到的名字
    * Returns the names of the request headers that need to be checked for equality when caching.
    */
   public static Set<String> varyFields(Headers responseHeaders) {

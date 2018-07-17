@@ -206,14 +206,17 @@ public final class DiskLruCache implements Closeable, Flushable {
   }
 
   public synchronized void initialize() throws IOException {
+    //当前线程持有锁，
     assert Thread.holdsLock(this);
 
     if (initialized) {
       return; // Already initialized.
     }
-
+    //三个文件，真实文件、临时文件、备份文件、
     // If a bkp file exists, use it instead.
     if (fileSystem.exists(journalFileBackup)) {
+      //备份文件存在，
+            //真实文件存在，删备份文件，否则用将备份文件重命名为真实的文件，
       // If journal file also exists just delete backup file.
       if (fileSystem.exists(journalFile)) {
         fileSystem.delete(journalFileBackup);
@@ -221,7 +224,7 @@ public final class DiskLruCache implements Closeable, Flushable {
         fileSystem.rename(journalFileBackup, journalFile);
       }
     }
-
+    //使用真实文件，
     // Prefer to pick up where we left off.
     if (fileSystem.exists(journalFile)) {
       try {
@@ -273,6 +276,7 @@ public final class DiskLruCache implements Closeable, Flushable {
   }
 
   private void readJournal() throws IOException {
+    //这个文件具有特定的格式
     BufferedSource source = Okio.buffer(fileSystem.source(journalFile));
     try {
       String magic = source.readUtf8LineStrict();

@@ -223,6 +223,7 @@ public final class Cache implements Closeable, Flushable {
 
     if (HttpMethod.invalidatesCache(response.request().method())) {
       try {
+        //这些方法不能有缓存
         remove(response.request());
       } catch (IOException ignored) {
         // The cache cannot be written.
@@ -606,11 +607,13 @@ public final class Cache implements Closeable, Flushable {
 
     public void writeTo(DiskLruCache.Editor editor) throws IOException {
       BufferedSink sink = Okio.buffer(editor.newSink(ENTRY_METADATA));
-
+      //1.请求url 换行
       sink.writeUtf8(url)
           .writeByte('\n');
+      //2.请求方法  换行
       sink.writeUtf8(requestMethod)
           .writeByte('\n');
+      //3.缓存一致性判断相关请求头数量  换行
       sink.writeDecimalLong(varyHeaders.size())
           .writeByte('\n');
       for (int i = 0, size = varyHeaders.size(); i < size; i++) {
@@ -619,9 +622,10 @@ public final class Cache implements Closeable, Flushable {
             .writeUtf8(varyHeaders.value(i))
             .writeByte('\n');
       }
-
+      //4.状态行信息，换行
       sink.writeUtf8(new StatusLine(protocol, code, message).toString())
           .writeByte('\n');
+      //5.响应头信息，
       sink.writeDecimalLong(responseHeaders.size() + 2)
           .writeByte('\n');
       for (int i = 0, size = responseHeaders.size(); i < size; i++) {

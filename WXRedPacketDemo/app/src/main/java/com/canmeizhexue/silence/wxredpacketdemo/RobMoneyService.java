@@ -2,10 +2,12 @@ package com.canmeizhexue.silence.wxredpacketdemo;
 
 import android.accessibilityservice.AccessibilityService;
 import android.annotation.SuppressLint;
+import android.annotation.TargetApi;
 import android.app.Notification;
 import android.app.PendingIntent;
 import android.app.PendingIntent.CanceledException;
 import android.content.Intent;
+import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
@@ -135,7 +137,7 @@ public class RobMoneyService extends AccessibilityService {
 	}
 	
 	/**
-	 * 打印一个节点的结构
+	 * 找到聊天页面的领取红包按钮，然后点击，之后会弹出红包对话框
 	 * @param info
 	 */
 	@SuppressLint("NewApi")
@@ -197,6 +199,21 @@ public class RobMoneyService extends AccessibilityService {
 		Log.i(TAG, " 打印红包详情页信息--------:");
 		printViewTree(nodeInfo,false);
 
+	}
+	/**
+	 * 关闭红包详情界面,实现自动返回聊天窗口
+	 */
+	@TargetApi(Build.VERSION_CODES.JELLY_BEAN_MR2)
+	private void close() {
+		AccessibilityNodeInfo nodeInfo = getRootInActiveWindow();
+		if (nodeInfo != null) {
+			//TODO 为了演示,直接查看了关闭按钮的id
+			List<AccessibilityNodeInfo> infos = nodeInfo.findAccessibilityNodeInfosByViewId("@id/ez");
+			nodeInfo.recycle();
+			for (AccessibilityNodeInfo item : infos) {
+				item.performAction(AccessibilityNodeInfo.ACTION_CLICK);
+			}
+		}
 	}
 	
 }
