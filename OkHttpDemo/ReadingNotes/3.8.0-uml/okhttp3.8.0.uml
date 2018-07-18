@@ -7115,7 +7115,7 @@ Http2Reader.Handler,这里就是ReaderRunnable
 <XPD:REF name="DiagramOwner">0PpzV4t/IUGVKIc1XygmEQAA</XPD:REF>
 <XPD:OBJ name="DiagramView" type="UMLSequenceDiagramView" guid="mEpI+muwK0K+HSgLnVEQuAAA">
 <XPD:REF name="Diagram">w/anLqZbqkiGqjpVkRz83AAA</XPD:REF>
-<XPD:ATTR name="#OwnedViews" type="integer">2</XPD:ATTR>
+<XPD:ATTR name="#OwnedViews" type="integer">3</XPD:ATTR>
 <XPD:OBJ name="OwnedViews[0]" type="UMLNoteView" guid="xhnco0zJZUaxm4+0XcoteAAA">
 <XPD:ATTR name="LineColor" type="string">clMaroon</XPD:ATTR>
 <XPD:ATTR name="FillColor" type="string">$00B9FFFF</XPD:ATTR>
@@ -7132,13 +7132,37 @@ Http2Reader.Handler,这里就是ReaderRunnable
 <XPD:OBJ name="OwnedViews[1]" type="UMLNoteView" guid="JGQMNP6mDk6b/4yk2fu+wQAA">
 <XPD:ATTR name="LineColor" type="string">clMaroon</XPD:ATTR>
 <XPD:ATTR name="FillColor" type="string">$00B9FFFF</XPD:ATTR>
-<XPD:ATTR name="Left" type="integer">188</XPD:ATTR>
-<XPD:ATTR name="Top" type="integer">396</XPD:ATTR>
+<XPD:ATTR name="Left" type="integer">92</XPD:ATTR>
+<XPD:ATTR name="Top" type="integer">200</XPD:ATTR>
 <XPD:ATTR name="Width" type="integer">841</XPD:ATTR>
 <XPD:ATTR name="Height" type="integer">53</XPD:ATTR>
 <XPD:ATTR name="Text" type="string">1.针对每个http请求，应该共享OkHttpClient、ConnectionPool、RealConnection（需要特定的条件,进而可能共享Http2Connection）
 2.对于每个http请求，都独享一个Request、RealCall、AsyncCall（如果是异步的请求）、RetryAndFollowUpInterceptor、ConnectInterceptor、CallServerInterceptor
     、StreamAllocation、Address、HttpCodec
+</XPD:ATTR>
+</XPD:OBJ>
+<XPD:OBJ name="OwnedViews[2]" type="UMLNoteView" guid="XISULZGBKE68O6RHPLX4oQAA">
+<XPD:ATTR name="LineColor" type="string">clMaroon</XPD:ATTR>
+<XPD:ATTR name="FillColor" type="string">$00B9FFFF</XPD:ATTR>
+<XPD:ATTR name="Left" type="integer">212</XPD:ATTR>
+<XPD:ATTR name="Top" type="integer">352</XPD:ATTR>
+<XPD:ATTR name="Width" type="integer">819</XPD:ATTR>
+<XPD:ATTR name="Height" type="integer">233</XPD:ATTR>
+<XPD:ATTR name="Text" type="string">1.0  1.1  2.0 比较
+
+1.0
+每次请求都要建立TCP链接，服务器处理完每次请求后就断开了TCP链接
+
+
+1.1
+支持持久链接了，一个TCP链接上可以并发发送多条请求，但是服务器必须按照接收到的请求的顺序返回结果响应，不然客户端无法区分结果对应是谁的
+支持断点续传等
+同一个时间下，同一个域名下的请求有一定的数量限制。
+
+
+2.0
+单一的HTTP 2.0链接可以发送多个请求响应了，减少了http链接过多而引起网络堵塞问题，每一次请求都有一个逻辑流
+支持服务器端推送数据，
 </XPD:ATTR>
 </XPD:OBJ>
 </XPD:OBJ>
